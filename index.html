@@ -278,6 +278,41 @@ input:focus { border-color: var(--a); }
 }
 .save-btn:active { filter: brightness(.9); transform: scale(.98); }
 
+/* ── DAILY CHALLENGE ── */
+.challenge-card {
+  background: linear-gradient(135deg,rgba(124,111,255,.12),rgba(62,255,160,.08));
+  border: 1.5px solid rgba(124,111,255,.3); border-radius: var(--r);
+  padding: 14px 16px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 14px;
+  transition: opacity .3s;
+}
+.challenge-card.done { opacity: .55; }
+.ch-icon { font-size: 2.2rem; line-height: 1; flex-shrink: 0; }
+.ch-body { flex: 1; min-width: 0; }
+.ch-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: var(--a); font-weight: 800; margin-bottom: 2px; }
+.ch-name { font-size: 1rem; font-weight: 800; }
+.ch-desc { font-size: .78rem; color: var(--t2); margin-top: 2px; line-height: 1.3; }
+.ch-done-badge { font-size: 1.6rem; flex-shrink: 0; }
+.chal-hint {
+  background: rgba(124,111,255,.1); border: 1px solid rgba(124,111,255,.2);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
+  font-size: .82rem; color: var(--t2); display: flex; align-items: center; gap: 8px;
+}
+.chal-hint strong { color: var(--t); }
+.chal-overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(8,8,15,.92); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px; animation: fadeIn .25s ease; pointer-events: none;
+}
+.chal-overlay.hide { animation: fadeOut .6s ease forwards; }
+@keyframes fadeOut { to { opacity: 0; transform: scale(1.04); } }
+.co-icon { font-size: 5rem; margin-bottom: 16px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1); }
+.co-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--a); font-weight: 700; margin-bottom: 10px; }
+.co-title { font-size: 2rem; font-weight: 900; color: var(--a3); text-align: center; animation: popIn .5s .1s cubic-bezier(.34,1.56,.64,1) both; }
+.co-player { font-size: .9rem; color: var(--t2); margin-top: 14px; }
+.co-stars { font-size: 1.8rem; margin-top: 10px; animation: popIn .4s .3s cubic-bezier(.34,1.56,.64,1) both; }
+
 /* ── SET PICKER ── */
 .set-picker { margin-bottom: 12px; }
 .set-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -585,6 +620,7 @@ input:focus { border-color: var(--a); }
   <div id="user-chip-wrap"></div>
   <div class="page-title">🚀 Rocket League <span class="sync-dot spin" id="sync-dot" title="Synchronizace..."></span></div>
   <div id="dash-stats" class="stat-grid"></div>
+  <div class="challenge-card" id="daily-challenge"></div>
   <div class="section-lbl">Zápasy</div>
   <div class="filter-bar" id="dash-filter"></div>
   <div id="match-list"></div>
@@ -624,6 +660,7 @@ input:focus { border-color: var(--a); }
   <div id="step-confirm" class="step">
     <div class="step-header"><button class="step-back" id="back-confirm">←</button><div><div class="step-title">Uložit zápas</div></div></div>
     <div id="confirm-card"></div>
+    <div class="chal-hint" id="chal-hint"></div>
     <div class="set-picker" id="set-picker">
       <div class="set-picker-header">
         <label>Výsledek setů <span style="color:var(--a2)">*</span></label>
@@ -859,6 +896,67 @@ function getSetScore(){
   return `${sc.w}:${sc.l}`;
 }
 
+// ─── DAILY CHALLENGE ─────────────────────────────────────────────────────────
+const CHALLENGES=[
+  {id:'clean',    icon:'💎', title:'Čistý zápas',   desc:'Vyhraj bez ztráty setu (X:0)'},
+  {id:'fighter',  icon:'⚔️', title:'Bojovník',       desc:'Vyhraj těsný zápas (2:1 nebo 3:2)'},
+  {id:'solo',     icon:'🦅', title:'Sólo hrdina',   desc:'Vyhraj jako sólo hráč v handicap zápase'},
+  {id:'double',   icon:'🔥', title:'Dvojitá výhra', desc:'Vyhraj 2 zápasy v jeden den'},
+  {id:'upset',    icon:'😈', title:'Favorit padl',  desc:'Poraz hráče s vyšším ELO'},
+  {id:'beer',     icon:'🍺', title:'Pivní král',    desc:'Vyhraj zápas i poslední set'},
+  {id:'globe',    icon:'🌍', title:'Všestranný',    desc:'Zahraj 2 různé sporty v jeden den'},
+  {id:'avenger',  icon:'💪', title:'Odplata',       desc:'Poraz hráče, který tě naposledy porazil'},
+  {id:'streak',   icon:'⚡', title:'Na vlně',       desc:'Vyhraj 3 zápasy v řadě (celkově)'},
+  {id:'hattrick', icon:'🎩', title:'Hattrick',      desc:'Vyhraj 3 zápasy v jeden den'},
+];
+function todayChallenge(){const day=Math.floor(Date.now()/86400000);return CHALLENGES[day%CHALLENGES.length];}
+function winnerOf(m){return m.mode==='1v1'?(m.winner==='1'?m.player1:m.player2):(m.winner==='solo'?m.solo:m.teamA);}
+function playedIn(m,pid){return m.mode==='1v1'?(m.player1===pid||m.player2===pid):(m.solo===pid||m.teamA===pid||m.teamB===pid);}
+function evalChallenge(chal,m,all,R,pid){
+  const w=winnerOf(m),didWin=w===pid;
+  const today=m.date||new Date().toISOString().slice(0,10);
+  const tod=all.filter(x=>x.date===today);
+  switch(chal.id){
+    case 'clean':   return didWin&&m.score&&m.score.split(':')[1]==='0';
+    case 'fighter': return didWin&&(m.score==='2:1'||m.score==='3:2');
+    case 'solo':    return m.mode==='2v1'&&m.winner==='solo'&&m.solo===pid;
+    case 'double':  return tod.filter(x=>winnerOf(x)===pid).length>=2;
+    case 'upset':
+      if(!didWin||m.mode!=='1v1')return false;
+      {const l=m.winner==='1'?m.player2:m.player1;return(R[l]?.overall||1000)>(R[pid]?.overall||1000);}
+    case 'beer':    return didWin&&m.lastSetWinner===pid;
+    case 'globe':   return[...new Set(tod.filter(x=>playedIn(x,pid)).map(x=>x.sport))].length>=2;
+    case 'avenger':
+      if(!didWin||m.mode!=='1v1')return false;
+      {const l=m.winner==='1'?m.player2:m.player1;
+      return!![...all].reverse().find(x=>x.id!==m.id&&x.mode==='1v1'&&((x.player1===pid&&x.player2===l&&x.winner==='2')||(x.player1===l&&x.player2===pid&&x.winner==='1')));}
+    case 'streak':
+      {let s=0;for(const x of [...all].filter(x=>playedIn(x,pid)).sort((a,b)=>new Date(a.date||0)-new Date(b.date||0))){if(winnerOf(x)===pid)s++;else s=0;if(s>=3)return true;}return false;}
+    case 'hattrick':return tod.filter(x=>winnerOf(x)===pid).length>=3;
+  }
+  return false;
+}
+function loadChalDone(){const s=localStorage.getItem('rp_chal');return s?JSON.parse(s):[];}
+function saveChalDone(d){localStorage.setItem('rp_chal',JSON.stringify(d));}
+let chalDone=loadChalDone();
+function chalCompleted(pid){const today=new Date().toISOString().slice(0,10),ch=todayChallenge();return chalDone.some(x=>x.date===today&&x.pid===pid&&x.cid===ch.id);}
+function markChalDone(pid){const today=new Date().toISOString().slice(0,10),ch=todayChallenge();if(!chalCompleted(pid)){chalDone.push({date:today,pid,cid:ch.id});saveChalDone(chalDone);}}
+function celebrateChallenge(ch,playerName){
+  const el=document.createElement('div');
+  el.className='chal-overlay';
+  el.innerHTML=`<div class="co-icon">${ch.icon}</div><div class="co-label">🎉 Výzva splněna!</div><div class="co-title">${ch.title}</div><div class="co-player">${playerName}</div><div class="co-stars">⭐⭐⭐</div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.classList.add('hide');setTimeout(()=>el.remove(),700);},2800);
+}
+function renderChallengeCard(){
+  const el=document.getElementById('daily-challenge');
+  if(!el)return;
+  const ch=todayChallenge();
+  const done=currentUser&&chalCompleted(currentUser);
+  el.className='challenge-card'+(done?' done':'');
+  el.innerHTML=`<div class="ch-icon">${ch.icon}</div><div class="ch-body"><div class="ch-label">⚡ Výzva dne</div><div class="ch-name">${ch.title}</div><div class="ch-desc">${ch.desc}</div></div>${done?'<div class="ch-done-badge">✅</div>':''}`;
+}
+
 // ─── ENTRY ───────────────────────────────────────────────────────────────────
 let E={};
 function initEntry(){
@@ -975,6 +1073,13 @@ function buildConfirm(){
       </div>
     </div>`;
   initSetPicker(wn,ln);
+  // challenge hint
+  const ch=todayChallenge();
+  const done=currentUser&&chalCompleted(currentUser);
+  const hint=document.getElementById('chal-hint');
+  hint.innerHTML=done
+    ?`<span style="font-size:1.1rem">✅</span> <span>Výzva dne splněna: <strong>${ch.title}</strong></span>`
+    :`<span>${ch.icon}</span> <span>Výzva: <strong>${ch.title}</strong> — ${ch.desc}</span>`;
   // last-set buttons
   const lsEl=document.getElementById('last-set-btns');
   let lsOpts;
@@ -1009,6 +1114,15 @@ document.getElementById('save-btn').addEventListener('click',()=>{
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
   else{m.solo=E.solo;m.teamA=E.teamA;m.teamB=E.teamB;}
   matches.unshift(m);saveM(matches);
+  // evaluate daily challenge
+  if(currentUser&&!chalCompleted(currentUser)){
+    const R=computeElo(matches);
+    const ch=todayChallenge();
+    if(evalChallenge(ch,m,matches,R,currentUser)){
+      markChalDone(currentUser);
+      setTimeout(()=>celebrateChallenge(ch,pName(currentUser)),500);
+    }
+  }
   const btn=document.getElementById('save-btn');
   btn.textContent='✓ Uloženo!';btn.style.background='var(--a3)';
   setTimeout(()=>{ toast('✅ Uloženo!'); showView('dashboard'); },400);
@@ -1017,6 +1131,7 @@ document.getElementById('save-btn').addEventListener('click',()=>{
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 let dashFilter='all';
 function renderDashboard(){
+  renderChallengeCard();
   buildFilterBar('dash-filter',dashFilter,f=>{dashFilter=f;renderMatchList();});
   const el=document.getElementById('dash-stats');
   el.innerHTML=`<div class="stat-card" style="grid-column:span 2">
@@ -1242,6 +1357,12 @@ function renderCuriosities(fm,ovo,tvo,R){
     const upsets=lsUpsets[topId]||0;
     cards.push({icon:'🍺',title:'Král posledního setu',value:`${pName(topId)}: ${topN}× vyhrál`,sub:upsets?`z toho ${upsets}× při celkové prohře`:undefined,prio:8.5});
   }
+
+  // Challenge completions per player
+  const chalCount={};
+  chalDone.forEach(x=>{chalCount[x.pid]=(chalCount[x.pid]||0)+1;});
+  const topChal=Object.entries(chalCount).sort((a,b)=>b[1]-a[1])[0];
+  if(topChal&&topChal[1]>=2)cards.push({icon:'⚡',title:'Výzvář',value:`${pName(topChal[0])}: ${topChal[1]}× výzva splněna`,sub:`ze ${CHALLENGES.length} různých výzev`,prio:9.5});
 
   if(!cards.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Přidej více zápasů.</p></div>`;return;}
   cards.sort((a,b)=>b.prio-a.prio);
