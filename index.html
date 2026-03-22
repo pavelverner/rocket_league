@@ -227,6 +227,16 @@ nav {
   box-shadow: 0 2px 12px rgba(0,0,0,.2);
 }
 .choice-btn-row { flex-direction: row; justify-content: center; height: 68px; }
+.matchup-btn {
+  width: 100%; background: var(--s1); border: 1.5px solid var(--t3); border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center; gap: 0;
+  padding: 0; cursor: pointer; font-family: inherit; height: 72px; margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2); transition: border-color .15s, background .15s, transform .12s;
+  overflow: hidden;
+}
+.matchup-btn:active { transform: scale(.98); background: var(--s2); border-color: var(--a); }
+.mu-player { flex: 1; text-align: center; font-size: 1.15rem; font-weight: 800; padding: 0 14px; letter-spacing: -.01em; }
+.mu-vs { font-size: .72rem; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: .1em; padding: 0 10px; flex-shrink: 0; border-left: 1px solid var(--t3); border-right: 1px solid var(--t3); height: 100%; display: flex; align-items: center; }
 .choice-btn:active { transform: scale(.95); background: var(--s2); border-color: var(--a); }
 .choice-btn .c-icon { font-size: 2rem; line-height: 1; }
 .choice-btn .c-label { font-weight: 700; font-size: 1rem; }
@@ -293,6 +303,16 @@ input:focus { border-color: var(--a); }
 .ch-name { font-size: 1rem; font-weight: 800; }
 .ch-desc { font-size: .78rem; color: var(--t2); margin-top: 2px; line-height: 1.3; }
 .ch-done-badge { font-size: 1.6rem; flex-shrink: 0; }
+.chal-mark-wrap { display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+.chal-mark-label { font-size:.85rem; color:var(--t2); flex:1; }
+.chal-mark-btn { background:var(--s1); border:1.5px solid var(--t3); color:var(--t2); border-radius:10px; padding:7px 18px; font-size:.9rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .15s; }
+.chal-mark-btn.on { background:rgba(62,255,160,.15); border-color:var(--a3); color:var(--a3); }
+.chal-stats-card { background:var(--s1); border-radius:var(--r); padding:14px 16px; margin-bottom:10px; }
+.chal-stats-name { font-size:.95rem; font-weight:700; margin-bottom:6px; }
+.chal-stats-row { font-size:.82rem; color:var(--t2); margin-bottom:2px; }
+.chal-history { margin-top:10px; }
+.chal-history-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--t3); font-size:.82rem; }
+.chal-history-item:last-child { border-bottom:none; }
 .chal-hint {
   background: rgba(124,111,255,.1); border: 1px solid rgba(124,111,255,.2);
   border-radius: 12px; padding: 10px 14px; margin-bottom: 10px;
@@ -672,6 +692,10 @@ input:focus { border-color: var(--a); }
       </div>
       <div id="set-rows"></div>
     </div>
+    <div class="chal-mark-wrap" id="chal-mark-wrap">
+      <div class="chal-mark-label" id="chal-mark-label"></div>
+      <button class="chal-mark-btn" id="chal-mark-btn">Ne</button>
+    </div>
     <div class="last-set-wrap" id="last-set-wrap">
       <div class="last-set-label">🍺 Kdo vyhrál poslední set?</div>
       <div class="last-set-btns" id="last-set-btns"></div>
@@ -696,6 +720,8 @@ input:focus { border-color: var(--a); }
   <div class="h2h-wrap"><div id="h2h-table"></div></div>
   <div class="section-lbl">2 vs 1</div>
   <div id="handicap-stats"></div>
+  <div class="section-lbl">Výzvy</div>
+  <div id="chal-stats"></div>
   <div class="section-lbl">Kuriozity</div>
   <div id="curiosities"></div>
 </div>
@@ -1007,11 +1033,10 @@ function evalChallenge(chal,m,all,R,pid){
   }
   return false;
 }
-function loadChalDone(){const s=localStorage.getItem('rp_chal');return s?JSON.parse(s):[];}
-function saveChalDone(d){localStorage.setItem('rp_chal',JSON.stringify(d));}
-let chalDone=loadChalDone();
-function chalCompleted(pid){const today=new Date().toISOString().slice(0,10),ch=todayChallenge();return chalDone.some(x=>x.date===today&&x.pid===pid&&x.cid===ch.id);}
-function markChalDone(pid){const today=new Date().toISOString().slice(0,10),ch=todayChallenge();if(!chalCompleted(pid)){chalDone.push({date:today,pid,cid:ch.id});saveChalDone(chalDone);}}
+function chalCompleted(pid){
+  const today=new Date().toISOString().slice(0,10),ch=todayChallenge();
+  return matches.some(m=>m.chalDone&&m.chalDone.pid===pid&&m.chalDone.cid===ch.id&&m.date===today);
+}
 function celebrateChallenge(ch,playerName){
   const el=document.createElement('div');
   el.className='chal-overlay';
@@ -1083,12 +1108,12 @@ function buildMatchup(){
   for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) pairs.push([players[i],players[j]]);
   const el=document.getElementById('matchup-list');
   el.innerHTML=pairs.map(([a,b])=>`
-    <button class="choice-btn choice-btn-row" data-a="${a.id}" data-b="${b.id}">
-      <span style="font-weight:700;font-size:1.05rem;color:${pColor(a.id)}">${a.name}</span>
-      <span style="color:var(--t2);padding:0 10px;font-size:.9rem">vs</span>
-      <span style="font-weight:700;font-size:1.05rem;color:${pColor(b.id)}">${b.name}</span>
+    <button class="matchup-btn" data-a="${a.id}" data-b="${b.id}">
+      <span class="mu-player" style="color:${pColor(a.id)}">${a.name}</span>
+      <span class="mu-vs">vs</span>
+      <span class="mu-player" style="color:${pColor(b.id)}">${b.name}</span>
     </button>`).join('');
-  el.querySelectorAll('.choice-btn').forEach(b=>{b.addEventListener('click',()=>{E.p1=b.dataset.a;E.p2=b.dataset.b;goStep('winner');});});
+  el.querySelectorAll('.matchup-btn').forEach(b=>{b.addEventListener('click',()=>{E.p1=b.dataset.a;E.p2=b.dataset.b;goStep('winner');});});
 }
 
 document.getElementById('back-solo').addEventListener('click',()=>goStep('mode'));
@@ -1097,10 +1122,10 @@ function buildSolo(){
   document.getElementById('solo-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1'}]);
   const el=document.getElementById('solo-list');
   el.innerHTML=players.map(p=>`
-    <button class="choice-btn choice-btn-row" data-id="${p.id}">
-      <span style="font-size:1.3rem">👤</span>
-      <span style="font-weight:700;font-size:1.05rem;margin-left:10px;color:${pColor(p.id)}">${p.name}</span>
-      <span style="font-size:.75rem;color:var(--t2);margin-left:8px">sólo</span>
+    <button class="matchup-btn" data-id="${p.id}">
+      <span class="mu-player" style="color:${pColor(p.id)}">${p.name}</span>
+      <span class="mu-vs">sólo</span>
+      <span class="mu-player" style="color:var(--t2);font-size:.9rem">${players.filter(x=>x.id!==p.id).map(x=>x.name).join(' + ')}</span>
     </button>`).join('');
   el.querySelectorAll('.choice-btn').forEach(b=>{b.addEventListener('click',()=>{E.solo=b.dataset.id;const t=players.filter(p=>p.id!==E.solo);E.teamA=t[0]?.id;E.teamB=t[1]?.id;goStep('winner');});});
 }
@@ -1144,13 +1169,25 @@ function buildConfirm(){
       </div>
     </div>`;
   initSetPicker(wn,ln);
-  // challenge hint
+  // challenge hint + toggle
   const ch=todayChallenge();
   const done=currentUser&&chalCompleted(currentUser);
   const hint=document.getElementById('chal-hint');
   hint.innerHTML=done
     ?`<span style="font-size:1.1rem">✅</span> <span>Výzva dne splněna: <strong>${ch.title}</strong></span>`
     :`<span>${ch.icon}</span> <span>Výzva: <strong>${ch.title}</strong> — ${ch.desc}</span>`;
+  E.chalMark=false;
+  const mw=document.getElementById('chal-mark-wrap');
+  const mb=document.getElementById('chal-mark-btn');
+  const ml=document.getElementById('chal-mark-label');
+  if(currentUser&&!done){
+    mw.style.display='flex';
+    ml.innerHTML=`${ch.icon} <strong>${ch.title}</strong> — splněno?`;
+    mb.textContent='Ne'; mb.classList.remove('on');
+    mb.onclick=()=>{E.chalMark=!E.chalMark;mb.textContent=E.chalMark?'Ano ✓':'Ne';mb.classList.toggle('on',E.chalMark);};
+  } else {
+    mw.style.display='none';
+  }
   // last-set buttons
   const lsEl=document.getElementById('last-set-btns');
   let lsOpts;
@@ -1184,16 +1221,12 @@ document.getElementById('save-btn').addEventListener('click',()=>{
     note:document.getElementById('note-input').value.trim()};
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
   else{m.solo=E.solo;m.teamA=E.teamA;m.teamB=E.teamB;}
-  matches.unshift(m);saveM(matches);
-  // evaluate daily challenge
-  if(currentUser&&!chalCompleted(currentUser)){
-    const R=computeElo(matches);
+  if(currentUser&&E.chalMark){
     const ch=todayChallenge();
-    if(evalChallenge(ch,m,matches,R,currentUser)){
-      markChalDone(currentUser);
-      setTimeout(()=>celebrateChallenge(ch,pName(currentUser)),500);
-    }
+    m.chalDone={pid:currentUser,cid:ch.id,icon:ch.icon,title:ch.title};
   }
+  matches.unshift(m);saveM(matches);
+  if(m.chalDone)setTimeout(()=>celebrateChallenge(todayChallenge(),pName(currentUser)),500);
   const btn=document.getElementById('save-btn');
   btn.textContent='✓ Uloženo!';btn.style.background='var(--a3)';
   setTimeout(()=>{ toast('✅ Uloženo!'); showView('dashboard'); },400);
@@ -1350,6 +1383,7 @@ function renderStats(){
     }).join('');
   }
 
+  renderChalStats(fm);
   renderCuriosities(fm,ovo,tvo,R);
 }
 
@@ -1429,9 +1463,9 @@ function renderCuriosities(fm,ovo,tvo,R){
     cards.push({icon:'🍺',title:'Král posledního setu',value:`${pName(topId)}: ${topN}× vyhrál`,sub:upsets?`z toho ${upsets}× při celkové prohře`:undefined,prio:8.5});
   }
 
-  // Challenge completions per player
+  // Challenge completions per player (from match data)
   const chalCount={};
-  chalDone.forEach(x=>{chalCount[x.pid]=(chalCount[x.pid]||0)+1;});
+  fm.filter(m=>m.chalDone).forEach(m=>{const pid=m.chalDone.pid;chalCount[pid]=(chalCount[pid]||0)+1;});
   const topChal=Object.entries(chalCount).sort((a,b)=>b[1]-a[1])[0];
   if(topChal&&topChal[1]>=2)cards.push({icon:'⚡',title:'Výzvář',value:`${pName(topChal[0])}: ${topChal[1]}× výzva splněna`,sub:`ze ${CHALLENGES.length} různých výzev`,prio:9.5});
 
@@ -1439,6 +1473,29 @@ function renderCuriosities(fm,ovo,tvo,R){
   cards.sort((a,b)=>b.prio-a.prio);
   el.innerHTML=cards.map(c=>`<div class="curio-card"><div class="curio-icon">${c.icon}</div><div><div class="curio-title">${c.title}</div><div class="curio-value">${c.value}</div>${c.sub?`<div class="curio-sub">${c.sub}</div>`:''}${c.extra||''}</div></div>`).join('');
   animateChildren(el,'anim-up',50);
+}
+
+function renderChalStats(fm){
+  const el=document.getElementById('chal-stats');
+  if(!el)return;
+  const done=fm.filter(m=>m.chalDone);
+  if(!done.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné splněné výzvy.</p></div>`;return;}
+  // per player counts
+  const byP={};
+  done.forEach(m=>{const pid=m.chalDone.pid;if(!byP[pid])byP[pid]=[];byP[pid].push(m);});
+  const sorted=Object.entries(byP).sort((a,b)=>b[1].length-a[1].length);
+  const cards=sorted.map(([pid,ms])=>{
+    const col=pColor(pid);
+    const icons=ms.map(m=>m.chalDone.icon).join(' ');
+    const recent=ms.slice(-5).reverse().map(m=>`<div class="chal-history-item"><span style="font-size:1.1rem">${m.chalDone.icon}</span><div><div style="font-weight:600;font-size:.83rem">${m.chalDone.title}</div><div style="font-size:.72rem;color:var(--t2)">${m.date?new Date(m.date).toLocaleDateString('cs-CZ'):''}</div></div></div>`).join('');
+    return `<div class="chal-stats-card">
+      <div class="chal-stats-name" style="color:${col}">${pName(pid)} <span style="font-size:.8rem;color:var(--t2);font-weight:400">${ms.length}× splněno</span></div>
+      <div style="font-size:1.2rem;letter-spacing:2px">${icons}</div>
+      <div class="chal-history">${recent}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=cards;
+  animateChildren(el,'anim-up',60);
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
