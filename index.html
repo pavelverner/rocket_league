@@ -667,11 +667,9 @@ input:focus { border-color: var(--a); }
   <div class="section-lbl">Hráči</div>
   <div id="player-list"></div>
   <button class="settings-btn" id="add-player-btn"><span class="s-icon">＋</span> Přidat hráče</button>
-  <button class="settings-btn" id="save-players-btn" style="color:var(--a3)"><span class="s-icon">✓</span> Uložit jména</button>
   <div class="section-lbl">Sporty</div>
   <div id="sport-list-set"></div>
   <button class="settings-btn" id="add-sport-btn"><span class="s-icon">＋</span> Přidat sport</button>
-  <button class="settings-btn" id="save-sports-btn" style="color:var(--a3)"><span class="s-icon">✓</span> Uložit sporty</button>
   <div class="section-lbl">Data</div>
   <button class="settings-btn" id="export-btn"><span class="s-icon">⬇</span> Export JSON</button>
   <label class="settings-btn" style="cursor:pointer"><span class="s-icon">⬆</span> Import JSON<input type="file" id="import-input" accept=".json" style="display:none"></label>
@@ -1256,19 +1254,43 @@ function renderSettings(){
   pel.innerHTML=players.map((p,i)=>`
     <div class="player-row">
       <div class="color-dot" style="background:${PP[i%PP.length]}"></div>
-      <input type="text" data-id="${p.id}" value="${p.name}">
+      <input type="text" data-id="${p.id}" value="${p.name}" placeholder="Jméno hráče">
       <button class="rem-btn" data-id="${p.id}">✕</button>
     </div>`).join('');
-  pel.querySelectorAll('.rem-btn').forEach(b=>{b.addEventListener('click',()=>{if(players.length<=2){toast('⚠️ Min. 2 hráči');return;}if(!confirm('Odebrat?'))return;players=players.filter(p=>p.id!==b.dataset.id);saveP(players);renderSettings();});});
+  pel.querySelectorAll('input[data-id]').forEach(inp=>{
+    inp.addEventListener('blur',()=>{
+      const p=players.find(x=>x.id===inp.dataset.id);
+      if(p&&inp.value.trim()&&p.name!==inp.value.trim()){p.name=inp.value.trim();saveP(players);toast('✅ Uloženo');}
+    });
+  });
+  pel.querySelectorAll('.rem-btn').forEach(b=>{b.addEventListener('click',()=>{
+    if(players.length<=2){toast('⚠️ Min. 2 hráči');return;}
+    if(!confirm('Odebrat hráče?'))return;
+    players=players.filter(p=>p.id!==b.dataset.id);saveP(players);renderSettings();
+  });});
 
   const sel=document.getElementById('sport-list-set');
   sel.innerHTML=sports.map(s=>`
     <div class="sport-row-set" data-id="${s.id}">
-      <input class="sport-icon-inp" type="text" value="${s.icon}" maxlength="2" placeholder="🏅">
-      <input class="sport-name-inp" type="text" value="${s.name}" placeholder="Název">
+      <input class="sport-icon-inp" type="text" value="${s.icon}" maxlength="4" placeholder="🏅">
+      <input class="sport-name-inp" type="text" value="${s.name}" placeholder="Název sportu">
       <input class="sport-color-inp" type="color" value="${s.color}">
       <button class="rem-btn sport-rem" data-id="${s.id}">✕</button>
     </div>`).join('');
+  sel.querySelectorAll('.sport-row-set').forEach(row=>{
+    const id=row.dataset.id;
+    const save=()=>{
+      const s=sports.find(x=>x.id===id);
+      if(!s)return;
+      s.icon=row.querySelector('.sport-icon-inp').value.trim()||s.icon;
+      s.name=row.querySelector('.sport-name-inp').value.trim()||s.name;
+      s.color=row.querySelector('.sport-color-inp').value;
+      saveSp(sports);toast('✅ Uloženo');
+    };
+    row.querySelector('.sport-icon-inp').addEventListener('blur',save);
+    row.querySelector('.sport-name-inp').addEventListener('blur',save);
+    row.querySelector('.sport-color-inp').addEventListener('change',save);
+  });
   sel.querySelectorAll('.sport-rem').forEach(b=>{b.addEventListener('click',()=>{
     const used=matches.filter(m=>m.sport===b.dataset.id).length;
     if(used&&!confirm(`Sport se používá v ${used} zápasech. Odebrat?`))return;
@@ -1277,10 +1299,16 @@ function renderSettings(){
   });});
 }
 
-document.getElementById('add-player-btn').addEventListener('click',()=>{players.push({id:'p_'+Date.now(),name:'Nový hráč'});saveP(players);renderSettings();setTimeout(()=>{const ins=document.querySelectorAll('#player-list input');ins[ins.length-1]?.focus();ins[ins.length-1]?.select();},50);});
-document.getElementById('save-players-btn').addEventListener('click',()=>{document.querySelectorAll('#player-list input[data-id]').forEach(i=>{const p=players.find(x=>x.id===i.dataset.id);if(p)p.name=i.value.trim()||p.name;});saveP(players);toast('✅ Hráči uloženi');});
-document.getElementById('add-sport-btn').addEventListener('click',()=>{sports.push({id:'s_'+Date.now(),name:'Nový sport',icon:'🏅',color:SCP[sports.length%SCP.length]});saveSp(sports);renderSettings();setTimeout(()=>{const rows=document.querySelectorAll('#sport-list-set .sport-row-set');const last=rows[rows.length-1];last?.querySelector('.sport-name-inp')?.focus();last?.querySelector('.sport-name-inp')?.select();},50);});
-document.getElementById('save-sports-btn').addEventListener('click',()=>{document.querySelectorAll('#sport-list-set .sport-row-set').forEach(row=>{const s=sports.find(x=>x.id===row.dataset.id);if(s){s.icon=row.querySelector('.sport-icon-inp').value.trim()||s.icon;s.name=row.querySelector('.sport-name-inp').value.trim()||s.name;s.color=row.querySelector('.sport-color-inp').value;}});saveSp(sports);toast('✅ Sporty uloženy');});
+document.getElementById('add-player-btn').addEventListener('click',()=>{
+  players.push({id:'p_'+Date.now(),name:'Nový hráč'});
+  renderSettings();
+  setTimeout(()=>{const ins=document.querySelectorAll('#player-list input[data-id]');const last=ins[ins.length-1];last?.focus();last?.select();},50);
+});
+document.getElementById('add-sport-btn').addEventListener('click',()=>{
+  sports.push({id:'s_'+Date.now(),name:'Nový sport',icon:'🏅',color:SCP[sports.length%SCP.length]});
+  renderSettings();
+  setTimeout(()=>{const rows=document.querySelectorAll('#sport-list-set .sport-row-set');const last=rows[rows.length-1];last?.querySelector('.sport-name-inp')?.focus();last?.querySelector('.sport-name-inp')?.select();},50);
+});
 document.getElementById('export-btn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({players,sports,matches},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`rocket-league-${new Date().toISOString().slice(0,10)}.json`;a.click();});
 document.getElementById('import-input').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.players||!d.matches)throw 0;if(!confirm(`Importovat ${d.matches.length} zápasů?`))return;players=d.players;matches=d.matches;if(d.sports)sports=d.sports;saveP(players);saveM(matches);saveSp(sports);toast('✅ Import hotov');renderSettings();}catch{toast('⚠️ Neplatný soubor');}};r.readAsText(f);e.target.value='';});
 document.getElementById('clear-btn').addEventListener('click',()=>{if(!confirm('Opravdu smazat vše?'))return;matches=[];saveM(matches);toast('🗑️ Smazáno');});
