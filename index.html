@@ -290,23 +290,24 @@ input:focus { border-color: var(--a); }
 
 /* ── DAILY CHALLENGE ── */
 .challenge-card {
-  background: linear-gradient(135deg,rgba(124,111,255,.12),rgba(62,255,160,.08));
-  border: 1.5px solid rgba(124,111,255,.3); border-radius: var(--r);
-  padding: 14px 16px; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 14px;
+  background: var(--s1); border-radius: var(--r);
+  border-left: 3px solid var(--a);
+  padding: 12px 16px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 12px;
   transition: opacity .3s;
 }
-.challenge-card.done { opacity: .55; }
-.ch-icon { font-size: 2.2rem; line-height: 1; flex-shrink: 0; }
+.challenge-card.done { opacity: .45; }
+.ch-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
 .ch-body { flex: 1; min-width: 0; }
-.ch-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: var(--a); font-weight: 800; margin-bottom: 2px; }
-.ch-name { font-size: 1rem; font-weight: 800; }
-.ch-desc { font-size: .78rem; color: var(--t2); margin-top: 2px; line-height: 1.3; }
-.ch-done-badge { font-size: 1.6rem; flex-shrink: 0; }
-.chal-mark-wrap { display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
-.chal-mark-label { font-size:.85rem; color:var(--t2); flex:1; }
-.chal-mark-btn { background:var(--s1); border:1.5px solid var(--t3); color:var(--t2); border-radius:10px; padding:7px 18px; font-size:.9rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .15s; }
-.chal-mark-btn.on { background:rgba(62,255,160,.15); border-color:var(--a3); color:var(--a3); }
+.ch-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; color: var(--t2); font-weight: 700; margin-bottom: 1px; }
+.ch-name { font-size: .95rem; font-weight: 700; }
+.ch-desc { font-size: .76rem; color: var(--t2); margin-top: 1px; }
+.ch-done-badge { font-size: 1.2rem; flex-shrink: 0; }
+.chal-mark-wrap { background:var(--s2); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+.chal-mark-label { font-size:.78rem; color:var(--t2); margin-bottom:8px; }
+.chal-mark-players { display:flex; gap:8px; flex-wrap:wrap; }
+.chal-mark-btn { background:var(--s1); border:1.5px solid var(--t3); color:var(--t2); border-radius:10px; padding:8px 16px; font-size:.88rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .15s; flex:1; }
+.chal-mark-btn.on { border-color:var(--a3); color:var(--a3); background:rgba(62,255,160,.1); }
 .chal-stats-card { background:var(--s1); border-radius:var(--r); padding:14px 16px; margin-bottom:10px; }
 .chal-stats-name { font-size:.95rem; font-weight:700; margin-bottom:6px; }
 .chal-stats-row { font-size:.82rem; color:var(--t2); margin-bottom:2px; }
@@ -692,10 +693,7 @@ input:focus { border-color: var(--a); }
       </div>
       <div id="set-rows"></div>
     </div>
-    <div class="chal-mark-wrap" id="chal-mark-wrap">
-      <div class="chal-mark-label" id="chal-mark-label"></div>
-      <button class="chal-mark-btn" id="chal-mark-btn">Ne</button>
-    </div>
+    <div class="chal-mark-wrap" id="chal-mark-wrap"></div>
     <div class="last-set-wrap" id="last-set-wrap">
       <div class="last-set-label">🍺 Kdo vyhrál poslední set?</div>
       <div class="last-set-btns" id="last-set-btns"></div>
@@ -778,7 +776,7 @@ async function fsWrite(docId, data){
 }
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
-const PP = ['#7c6fff','#ff5e7d','#3effa0','#ffd166','#ef476f','#06d6a0','#38bdf8','#fb923c'];
+const PP = ['#3effa0','#ff4444','#a855f7','#ffd166','#38bdf8','#fb923c','#06d6a0','#7c6fff'];
 const SCP = ['#ff9a3c','#3cb8ff','#a8e063','#ffe066','#c084fc','#f472b6','#34d399','#fb923c'];
 const DS = [
   {id:'squash',name:'Squash',icon:'⚫',color:'#ff9a3c'},
@@ -1035,7 +1033,9 @@ function evalChallenge(chal,m,all,R,pid){
 }
 function chalCompleted(pid){
   const today=new Date().toISOString().slice(0,10),ch=todayChallenge();
-  return matches.some(m=>m.chalDone&&m.chalDone.pid===pid&&m.chalDone.cid===ch.id&&m.date===today);
+  return matches.some(m=>m.chalDone&&m.date===today&&(
+    Array.isArray(m.chalDone)?m.chalDone.some(x=>x.pid===pid&&x.cid===ch.id):m.chalDone.pid===pid&&m.chalDone.cid===ch.id
+  ));
 }
 function celebrateChallenge(ch,playerName){
   const el=document.createElement('div');
@@ -1176,18 +1176,19 @@ function buildConfirm(){
   hint.innerHTML=done
     ?`<span style="font-size:1.1rem">✅</span> <span>Výzva dne splněna: <strong>${ch.title}</strong></span>`
     :`<span>${ch.icon}</span> <span>Výzva: <strong>${ch.title}</strong> — ${ch.desc}</span>`;
-  E.chalMark=false;
+  E.chalMarked=new Set();
   const mw=document.getElementById('chal-mark-wrap');
-  const mb=document.getElementById('chal-mark-btn');
-  const ml=document.getElementById('chal-mark-label');
-  if(currentUser&&!done){
-    mw.style.display='flex';
-    ml.innerHTML=`${ch.icon} <strong>${ch.title}</strong> — splněno?`;
-    mb.textContent='Ne'; mb.classList.remove('on');
-    mb.onclick=()=>{E.chalMark=!E.chalMark;mb.textContent=E.chalMark?'Ano ✓':'Ne';mb.classList.toggle('on',E.chalMark);};
-  } else {
-    mw.style.display='none';
-  }
+  mw.innerHTML=`<div class="chal-mark-label" id="chal-mark-label">${ch.icon} <strong>${ch.title}</strong> — kdo splnil výzvu?</div><div class="chal-mark-players" id="chal-mark-players"></div>`;
+  const matchPids=E.mode==='1v1'?[E.p1,E.p2]:[E.solo,E.teamA,E.teamB].filter(Boolean);
+  matchPids.forEach(pid=>{
+    const btn=document.createElement('button');
+    btn.className='chal-mark-btn';btn.textContent=pName(pid);
+    btn.addEventListener('click',()=>{
+      if(E.chalMarked.has(pid)){E.chalMarked.delete(pid);btn.classList.remove('on');btn.style.borderColor='';}
+      else{E.chalMarked.add(pid);btn.classList.add('on');btn.style.borderColor=pColor(pid);btn.style.color=pColor(pid);}
+    });
+    document.getElementById('chal-mark-players').appendChild(btn);
+  });
   // last-set buttons
   const lsEl=document.getElementById('last-set-btns');
   let lsOpts;
@@ -1221,12 +1222,13 @@ document.getElementById('save-btn').addEventListener('click',()=>{
     note:document.getElementById('note-input').value.trim()};
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
   else{m.solo=E.solo;m.teamA=E.teamA;m.teamB=E.teamB;}
-  if(currentUser&&E.chalMark){
+  if(E.chalMarked&&E.chalMarked.size>0){
     const ch=todayChallenge();
-    m.chalDone={pid:currentUser,cid:ch.id,icon:ch.icon,title:ch.title};
+    m.chalDone=[...E.chalMarked].map(pid=>({pid,cid:ch.id,icon:ch.icon,title:ch.title}));
   }
   matches.unshift(m);saveM(matches);
-  if(m.chalDone)setTimeout(()=>celebrateChallenge(todayChallenge(),pName(currentUser)),500);
+  if(m.chalDone&&currentUser&&m.chalDone.some(x=>x.pid===currentUser))
+    setTimeout(()=>celebrateChallenge(todayChallenge(),pName(currentUser)),500);
   const btn=document.getElementById('save-btn');
   btn.textContent='✓ Uloženo!';btn.style.background='var(--a3)';
   setTimeout(()=>{ toast('✅ Uloženo!'); showView('dashboard'); },400);
