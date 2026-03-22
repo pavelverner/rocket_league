@@ -129,7 +129,7 @@ nav {
 .anim-in { animation: fadeIn .25s ease both; }
 
 /* ── STAT GRID ── */
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0; }
 .stat-card {
   background: var(--s1); border-radius: var(--r); padding: 16px 14px;
   text-align: center; box-shadow: 0 2px 16px rgba(0,0,0,.25);
@@ -641,8 +641,9 @@ input:focus { border-color: var(--a); }
   <div id="user-chip-wrap"></div>
   <div class="page-title">🚀 Rocket League <span class="sync-dot spin" id="sync-dot" title="Synchronizace..."></span></div>
   <div id="dash-stats" class="stat-grid"></div>
+  <div class="section-lbl">Výzva dne</div>
   <div class="challenge-card" id="daily-challenge"></div>
-  <div class="section-lbl">Zápasy</div>
+  <div class="section-lbl" style="margin-top:8px">Zápasy</div>
   <div class="filter-bar" id="dash-filter"></div>
   <div id="match-list"></div>
 </div>
