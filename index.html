@@ -215,7 +215,8 @@ nav {
 .step-dot.active { background: var(--a); width: 20px; border-radius: 3px; }
 
 .choices-wrap { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 16px 0 8px; }
-.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; grid-auto-rows: 1fr; }
+.choices-grid .choice-btn { height: 100%; }
 
 .choice-btn {
   background: var(--s1); border: 1.5px solid var(--t3); color: var(--t);
@@ -632,7 +633,6 @@ input:focus { border-color: var(--a); }
         <div class="set-picker-col-label" id="sp-col-loser">Poražený</div>
       </div>
       <div id="set-rows"></div>
-      <button class="add-set-btn" id="add-set-btn">＋ Přidat set</button>
     </div>
     <div class="last-set-wrap" id="last-set-wrap">
       <div class="last-set-label">🍺 Kdo vyhrál poslední set?</div>
@@ -823,7 +823,7 @@ function buildFilterBar(id, active, cb){
 // ─── SET PICKER ──────────────────────────────────────────────────────────────
 let sets=[];
 function initSetPicker(wn='Vítěz',ln='Poražený'){
-  sets=[{w:0,l:0}];
+  sets=[{w:0,l:0},{w:0,l:0},{w:0,l:0}];
   document.getElementById('sp-col-winner').textContent=wn;
   document.getElementById('sp-col-loser').textContent=ln;
   renderSetRows();
@@ -859,10 +859,6 @@ function removeSet(i){
   sets.splice(i,1);
   renderSetRows();
 }
-document.getElementById('add-set-btn').addEventListener('click',()=>{
-  sets.push({w:0,l:0});
-  renderSetRows();
-});
 function getSetScore(){
   if(sets.length===0)return '';
   const hasData=sets.some(s=>s.w>0||s.l>0);
@@ -1067,6 +1063,7 @@ function renderMatchList(){
           ${m.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
           ${date?`<span>${date}</span>`:''}
           ${m.note?`<span>📝 ${m.note}</span>`:''}
+          ${m.lastSetWinner?`<span style="color:#ffd600">🍺 ${pName(m.lastSetWinner)}</span>`:''}
         </div>
       </div>
       ${m.score?`<div class="score">${m.score}</div>`:''}
@@ -1136,7 +1133,7 @@ function renderStats(){
     const lsMatches=fm.filter(m=>m.lastSetWinner&&(m.mode==='1v1'?(m.player1===p.id||m.player2===p.id):(m.solo===p.id||m.teamA===p.id||m.teamB===p.id)));
     const lsWins=lsMatches.filter(m=>m.lastSetWinner===p.id).length;
     const lsUpsets=lsMatches.filter(m=>m.lastSetWinner===p.id&&(m.mode==='1v1'?((m.player1===p.id&&m.winner!=='1')||(m.player2===p.id&&m.winner!=='2')):(m.winner!=='solo'&&m.solo!==p.id)||(m.winner==='solo'&&m.solo===p.id?false:m.teamA===p.id||m.teamB===p.id))).length;
-    const beerRow=lsWins>0?`<div class="sport-row"><span>🍺 Posl. set</span><span style="color:#ffd600;font-weight:700">${lsWins}×${lsUpsets>0?` <span style="color:var(--t2);font-weight:400;font-size:.8rem">(${lsUpsets}× při prohře)</span>`:''}</span></div>`:'';
+    const beerRow=lsWins>0?`<div class="sport-row"><span>🍺 Poslední set</span><span style="color:#ffd600;font-weight:700">${lsWins}×${lsUpsets>0?` <span style="color:var(--t2);font-weight:400;font-size:.8rem">(${lsUpsets}× při prohře)</span>`:''}</span></div>`:'';
     return `<div class="player-stat-card" style="--pc:${col}">
       <div class="pname" style="color:${col}">${p.name}</div>
       ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span> / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
