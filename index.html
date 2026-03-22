@@ -644,7 +644,7 @@ input:focus { border-color: var(--a); }
   <div id="elo-list"></div>
   <div class="section-lbl">Výsledky (1v1)</div>
   <div id="player-stats"></div>
-  <div class="section-lbl">Head to head</div>
+  <div class="section-lbl">Vzájemné výsledky</div>
   <div class="h2h-wrap"><div id="h2h-table"></div></div>
   <div class="section-lbl">2 vs 1</div>
   <div id="handicap-stats"></div>
@@ -709,7 +709,7 @@ async function fsWrite(docId, data){
 const PP = ['#7c6fff','#ff5e7d','#3effa0','#ffd166','#ef476f','#06d6a0','#38bdf8','#fb923c'];
 const SCP = ['#ff9a3c','#3cb8ff','#a8e063','#ffe066','#c084fc','#f472b6','#34d399','#fb923c'];
 const DS = [
-  {id:'squash',name:'Squash',icon:'🏓',color:'#ff9a3c'},
+  {id:'squash',name:'Squash',icon:'⚫',color:'#ff9a3c'},
   {id:'badminton',name:'Badminton',icon:'🏸',color:'#3cb8ff'},
   {id:'pickleball',name:'Pickleball',icon:'🥒',color:'#a8e063'},
   {id:'tennis',name:'Tenis',icon:'🎾',color:'#ffe066'},
@@ -718,7 +718,8 @@ const ELO_K=32, ELO_DEF=1000;
 
 function loadP(){const s=localStorage.getItem('rp_players');return s?JSON.parse(s):[{id:'p1',name:'Pavel'},{id:'p2',name:'Filip'},{id:'p3',name:'Luděk'}]}
 function saveP(p){localStorage.setItem('rp_players',JSON.stringify(p));fsWrite('players',{list:p});}
-function loadS(){const s=localStorage.getItem('rp_sports');return s?JSON.parse(s):DS}
+function migrateSports(list){const sq=list.find(s=>s.id==='squash');if(sq&&sq.icon==='🏓')sq.icon='⚫';return list;}
+function loadS(){const s=localStorage.getItem('rp_sports');const list=s?JSON.parse(s):DS;migrateSports(list);if(s)localStorage.setItem('rp_sports',JSON.stringify(list));return list;}
 function saveSp(s){localStorage.setItem('rp_sports',JSON.stringify(s));fsWrite('sports',{list:s});}
 function loadM(){const s=localStorage.getItem('rp_matches');return s?JSON.parse(s):[]}
 function saveM(m){localStorage.setItem('rp_matches',JSON.stringify(m));fsWrite('matches',{list:m});}
@@ -1104,7 +1105,7 @@ function renderStats(){
       <div class="pname" style="color:${col}">${p.name}</div>
       ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span> / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
       <div class="wr-bar"><div class="wr-fill" data-wr="${wr}" style="width:0%"></div></div>
-      <div class="wr-lbl">${tot?`Win rate ${wr}% · ${win}/${tot}`:'—'}</div>
+      <div class="wr-lbl">${tot?`Výhernost ${wr}% · ${win}/${tot}`:'—'}</div>
     </div>`;
   }).join('');
   animateChildren(psEl,'anim-up',70);
@@ -1208,6 +1209,37 @@ function renderCuriosities(fm,ovo,tvo,R){
     const as=tvo.filter(m=>m.solo===p.id);
     if(as.length>=2){const sw=as.filter(m=>m.winner==='solo').length,wr=Math.round(sw/as.length*100);if(wr>=60)cards.push({icon:'💪',title:'Sólo specialista',value:`${p.name}: ${wr}% výher`,sub:`${sw}/${as.length} sólo zápasů`,prio:6});}
   });
+
+  // Beer stat: who wins the last set most often (especially when losing the match)
+  const lastSetWins={},lastSetLosses={};
+  fm.forEach(m=>{
+    if(!m.score)return;
+    const sets=m.score.split(',').map(s=>s.trim()).filter(s=>/^\d+:\d+$/.test(s));
+    if(!sets.length)return;
+    const last=sets[sets.length-1].split(':').map(Number);
+    if(last[0]===last[1])return; // tie in set, skip
+    const winnerWonLastSet=last[0]>last[1];
+    let setWinner,setLoser;
+    if(m.mode==='1v1'){
+      const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;
+      setWinner=winnerWonLastSet?w:l;
+      setLoser=winnerWonLastSet?l:w;
+    }else{
+      const w=m.winner==='solo'?m.solo:m.teamA,l=m.winner==='solo'?m.teamA:m.solo;
+      setWinner=winnerWonLastSet?w:l;
+      setLoser=winnerWonLastSet?l:w;
+    }
+    lastSetWins[setWinner]=(lastSetWins[setWinner]||0)+1;
+    // count "won last set but lost match"
+    const overallLoser=m.mode==='1v1'?(m.winner==='1'?m.player2:m.player1):(m.winner==='solo'?m.teamA:m.solo);
+    if(setWinner===overallLoser)lastSetLosses[setWinner]=(lastSetLosses[setWinner]||0)+1;
+  });
+  const beerEntries=Object.entries(lastSetWins).filter(([,v])=>v>=2).sort((a,b)=>b[1]-a[1]);
+  if(beerEntries.length){
+    const [topId,topN]=beerEntries[0];
+    const upsets=lastSetLosses[topId]||0;
+    cards.push({icon:'🍺',title:'Král posledního setu',value:`${pName(topId)}: ${topN}× vyhrál`,sub:upsets?`z toho ${upsets}× při celkové prohře`:undefined,prio:8.5});
+  }
 
   if(!cards.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Přidej více zápasů.</p></div>`;return;}
   cards.sort((a,b)=>b.prio-a.prio);
@@ -1440,9 +1472,10 @@ function startSync(){
   db.collection('config').doc('sports').onSnapshot(snap=>{
     if(!snap.exists) return;
     const remote=snap.data().list||[];
+    migrateSports(remote);
     if(JSON.stringify(remote)!==JSON.stringify(sports)){
       sports=remote;
-      localStorage.setItem('rp_sports',JSON.stringify(sports));
+      saveSp(sports);
       if(activeViewId()==='v-dashboard') renderDashboard();
     }
   }, ()=>{});
