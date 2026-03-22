@@ -898,41 +898,112 @@ function getSetScore(){
 
 // ─── DAILY CHALLENGE ─────────────────────────────────────────────────────────
 const CHALLENGES=[
-  {id:'clean',    icon:'💎', title:'Čistý zápas',   desc:'Vyhraj bez ztráty setu (X:0)'},
-  {id:'fighter',  icon:'⚔️', title:'Bojovník',       desc:'Vyhraj těsný zápas (2:1 nebo 3:2)'},
-  {id:'solo',     icon:'🦅', title:'Sólo hrdina',   desc:'Vyhraj jako sólo hráč v handicap zápase'},
-  {id:'double',   icon:'🔥', title:'Dvojitá výhra', desc:'Vyhraj 2 zápasy v jeden den'},
-  {id:'upset',    icon:'😈', title:'Favorit padl',  desc:'Poraz hráče s vyšším ELO'},
-  {id:'beer',     icon:'🍺', title:'Pivní král',    desc:'Vyhraj zápas i poslední set'},
-  {id:'globe',    icon:'🌍', title:'Všestranný',    desc:'Zahraj 2 různé sporty v jeden den'},
-  {id:'avenger',  icon:'💪', title:'Odplata',       desc:'Poraz hráče, který tě naposledy porazil'},
-  {id:'streak',   icon:'⚡', title:'Na vlně',       desc:'Vyhraj 3 zápasy v řadě (celkově)'},
-  {id:'hattrick', icon:'🎩', title:'Hattrick',      desc:'Vyhraj 3 zápasy v jeden den'},
+  // Skóre zápasu
+  {id:'c20',      icon:'💎', title:'Kanár',               desc:'Vyhraj 2:0 — soupeř nezíská ani jeden set'},
+  {id:'c30',      icon:'👑', title:'Trojitý kanár',        desc:'Vyhraj 3:0 — totální dominance'},
+  {id:'c31',      icon:'🎯', title:'Jistota',              desc:'Vyhraj 3:1'},
+  {id:'c21',      icon:'⚔️', title:'Třetí set rozhodl',   desc:'Vyhraj 2:1 — rozhodl poslední set'},
+  {id:'c32',      icon:'🩸', title:'Pětisetový thriller',  desc:'Vyhraj 3:2 — do posledního dechu'},
+  {id:'cclean',   icon:'💫', title:'Vzduch je čistý',      desc:'Vyhraj bez ztráty jediného setu'},
+  {id:'clast',    icon:'🎲', title:'Rozhodující moment',   desc:'Vyhraj v posledním možném setu (2:1 nebo 3:2)'},
+  // ELO / žebříček
+  {id:'upset',    icon:'😈', title:'Šokující výsledek',    desc:'Poraz hráče s vyšším ELO'},
+  {id:'bigupset', icon:'🤯', title:'Obří šok',             desc:'Poraz hráče o 50+ ELO bodů silnějšího'},
+  {id:'beattop',  icon:'👊', title:'Zkroť lídra',          desc:'Poraz hráče s nejvyšším ELO'},
+  {id:'underdog', icon:'🐶', title:'Underdog',             desc:'Vyhraj jako hráč s nejnižším ELO'},
+  {id:'favclean', icon:'😏', title:'Potvrzení kvality',    desc:'Vyhraj jako favorit (o 50+ bodů silnější) bez ztráty setu'},
+  {id:'upsclean', icon:'🌪️', title:'Vichřice',            desc:'Poraz silnějšího hráče bez ztráty setu'},
+  // Série
+  {id:'streak3',  icon:'⚡', title:'Na vlně',              desc:'Vyhraj 3 zápasy v řadě (celkově)'},
+  {id:'streak5',  icon:'🌊', title:'Tsunami',              desc:'Vyhraj 5 zápasů v řadě (celkově)'},
+  {id:'cmb2',     icon:'🔄', title:'Zpět z mrtvých',       desc:'Vyhraj po 2+ prohrách v řadě'},
+  {id:'cmb3',     icon:'🔥', title:'Fénix',                desc:'Vyhraj po 3+ prohrách v řadě'},
+  {id:'cmbclean', icon:'✨', title:'Čistý comeback',       desc:'Vyhraj po 2+ prohrách A bez ztráty setu'},
+  {id:'spstr',    icon:'🏅', title:'Sportovní série',      desc:'Vyhraj 3× ve stejném sportu v řadě'},
+  // Denní výzvy
+  {id:'double',   icon:'✌️', title:'Dvojitá výhra',        desc:'Vyhraj 2 zápasy v jeden den'},
+  {id:'hattrick', icon:'🎩', title:'Hattrick',             desc:'Vyhraj 3 zápasy v jeden den'},
+  {id:'flawless', icon:'🌟', title:'Bezchybný den',        desc:'Vyhraj všechny zápasy dne (min. 2)'},
+  {id:'first',    icon:'🌅', title:'První krev',           desc:'Vyhraj první zápas dne'},
+  {id:'marathon', icon:'🏃', title:'Maratón',              desc:'Zahraj 3+ zápasy v jeden den'},
+  {id:'vsall',    icon:'🌈', title:'Porazil jsem všechny', desc:'Vyhraj dnes proti každému hráči'},
+  {id:'vs2',      icon:'🥊', title:'Dva soupeři',          desc:'Vyhraj dnes proti 2 různým hráčům'},
+  {id:'dclean',   icon:'💠', title:'Dvojitý kanár',        desc:'Vyhraj 2 zápasy dnes bez ztráty setu'},
+  {id:'hclean',   icon:'🎰', title:'Tři čisté',            desc:'Vyhraj 3 zápasy dnes bez ztráty setu'},
+  // Pivo
+  {id:'beer',     icon:'🍺', title:'Pivní král',           desc:'Vyhraj zápas i poslední set'},
+  {id:'moralwin', icon:'🍻', title:'Morální vítěz',        desc:'Prohraj zápas ale vyhraj poslední set'},
+  // 2v1
+  {id:'solo',     icon:'🦅', title:'Sólo hrdina',          desc:'Vyhraj jako sólo hráč v handicap'},
+  {id:'team',     icon:'👥', title:'Síla týmu',            desc:'Vyhraj jako tým v handicap'},
+  {id:'soloclean',icon:'🦁', title:'Sólo dominance',       desc:'Vyhraj jako sólo bez ztráty setu'},
+  // Rivalita / Historie
+  {id:'avenger',  icon:'💪', title:'Odplata',              desc:'Poraz hráče, který tě naposledy porazil'},
+  {id:'nemesis',  icon:'🎯', title:'Nemesis poražen',      desc:'Poraz hráče, proti kterému máš zápornou bilanci'},
+  {id:'sportrev', icon:'🔁', title:'Sportovní čest',       desc:'Vyhraj ve sportu, kde jsi naposledy prohrál'},
+  {id:'firstwin', icon:'🌱', title:'Konečně!',             desc:'Poraz hráče, kterého jsi dosud nikdy neporazil'},
+  {id:'beatall',  icon:'🏆', title:'Porazil jsem vše',     desc:'Vyhraj aspoň 1× proti každému hráči (celkově)'},
+  // Speciální
+  {id:'closeloss',icon:'🤝', title:'Čestná porážka',       desc:'Prohraj těsně (1:2 nebo 2:3)'},
+  {id:'fsport',   icon:'🎖️', title:'Nováček sportu',      desc:'Vyhraj svůj první zápas v tomto sportu'},
 ];
 function todayChallenge(){const day=Math.floor(Date.now()/86400000);return CHALLENGES[day%CHALLENGES.length];}
 function winnerOf(m){return m.mode==='1v1'?(m.winner==='1'?m.player1:m.player2):(m.winner==='solo'?m.solo:m.teamA);}
 function playedIn(m,pid){return m.mode==='1v1'?(m.player1===pid||m.player2===pid):(m.solo===pid||m.teamA===pid||m.teamB===pid);}
+function opp1v1(m,pid){return m.player1===pid?m.player2:m.player1;}
 function evalChallenge(chal,m,all,R,pid){
-  const w=winnerOf(m),didWin=w===pid;
+  const w=winnerOf(m),didWin=w===pid,inMatch=playedIn(m,pid);
+  if(!inMatch)return false;
+  const ep=R[pid]?.overall||1000;
+  const sc=m.score||'';
+  const scL=sc.split(':');
   const today=m.date||new Date().toISOString().slice(0,10);
   const tod=all.filter(x=>x.date===today);
+  const todP=tod.filter(x=>playedIn(x,pid));
+  const todW=tod.filter(x=>winnerOf(x)===pid);
+  const histP=[...all].filter(x=>playedIn(x,pid)&&x.id!==m.id).sort((a,b)=>a.id-b.id);
+  function lossStreakBefore(){let s=0;for(let i=histP.length-1;i>=0;i--){if(winnerOf(histP[i])!==pid)s++;else break;}return s;}
   switch(chal.id){
-    case 'clean':   return didWin&&m.score&&m.score.split(':')[1]==='0';
-    case 'fighter': return didWin&&(m.score==='2:1'||m.score==='3:2');
-    case 'solo':    return m.mode==='2v1'&&m.winner==='solo'&&m.solo===pid;
-    case 'double':  return tod.filter(x=>winnerOf(x)===pid).length>=2;
-    case 'upset':
-      if(!didWin||m.mode!=='1v1')return false;
-      {const l=m.winner==='1'?m.player2:m.player1;return(R[l]?.overall||1000)>(R[pid]?.overall||1000);}
-    case 'beer':    return didWin&&m.lastSetWinner===pid;
-    case 'globe':   return[...new Set(tod.filter(x=>playedIn(x,pid)).map(x=>x.sport))].length>=2;
-    case 'avenger':
-      if(!didWin||m.mode!=='1v1')return false;
-      {const l=m.winner==='1'?m.player2:m.player1;
-      return!![...all].reverse().find(x=>x.id!==m.id&&x.mode==='1v1'&&((x.player1===pid&&x.player2===l&&x.winner==='2')||(x.player1===l&&x.player2===pid&&x.winner==='1')));}
-    case 'streak':
-      {let s=0;for(const x of [...all].filter(x=>playedIn(x,pid)).sort((a,b)=>new Date(a.date||0)-new Date(b.date||0))){if(winnerOf(x)===pid)s++;else s=0;if(s>=3)return true;}return false;}
-    case 'hattrick':return tod.filter(x=>winnerOf(x)===pid).length>=3;
+    case 'c20':      return didWin&&sc==='2:0';
+    case 'c30':      return didWin&&sc==='3:0';
+    case 'c31':      return didWin&&sc==='3:1';
+    case 'c21':      return didWin&&sc==='2:1';
+    case 'c32':      return didWin&&sc==='3:2';
+    case 'cclean':   return didWin&&scL[1]==='0';
+    case 'clast':    return didWin&&(sc==='2:1'||sc==='3:2');
+    case 'upset':    return didWin&&m.mode==='1v1'&&(R[opp1v1(m,pid)]?.overall||1000)>ep;
+    case 'bigupset': return didWin&&m.mode==='1v1'&&(R[opp1v1(m,pid)]?.overall||1000)-ep>=50;
+    case 'beattop':  {if(!didWin||m.mode!=='1v1')return false;const top=Math.max(...players.map(p=>R[p.id]?.overall||1000));return(R[opp1v1(m,pid)]?.overall||1000)===top;}
+    case 'underdog': {if(!didWin)return false;const mn=Math.min(...players.map(p=>R[p.id]?.overall||1000));return ep===mn;}
+    case 'favclean': return didWin&&m.mode==='1v1'&&ep-(R[opp1v1(m,pid)]?.overall||1000)>=50&&scL[1]==='0';
+    case 'upsclean': return didWin&&m.mode==='1v1'&&(R[opp1v1(m,pid)]?.overall||1000)>ep&&scL[1]==='0';
+    case 'streak3':  {let s=0;for(const x of [...all].filter(x=>playedIn(x,pid)).sort((a,b)=>a.id-b.id)){if(winnerOf(x)===pid)s++;else s=0;if(s>=3)return true;}return false;}
+    case 'streak5':  {let s=0;for(const x of [...all].filter(x=>playedIn(x,pid)).sort((a,b)=>a.id-b.id)){if(winnerOf(x)===pid)s++;else s=0;if(s>=5)return true;}return false;}
+    case 'cmb2':     return didWin&&lossStreakBefore()>=2;
+    case 'cmb3':     return didWin&&lossStreakBefore()>=3;
+    case 'cmbclean': return didWin&&scL[1]==='0'&&lossStreakBefore()>=2;
+    case 'spstr':    {let s=0;for(const x of [...all].filter(x=>playedIn(x,pid)&&x.sport===m.sport).sort((a,b)=>a.id-b.id)){if(winnerOf(x)===pid)s++;else s=0;if(s>=3)return true;}return false;}
+    case 'double':   return todW.length>=2;
+    case 'hattrick': return todW.length>=3;
+    case 'flawless': return todP.length>=2&&todP.every(x=>winnerOf(x)===pid);
+    case 'first':    {const sorted=todP.sort((a,b)=>a.id-b.id);return didWin&&sorted.length>0&&sorted[0].id===m.id;}
+    case 'marathon': return todP.length>=3;
+    case 'vsall':    {const others=players.filter(p=>p.id!==pid).map(p=>p.id);const beaten=new Set(todW.filter(x=>x.mode==='1v1').map(x=>opp1v1(x,pid)));return others.every(p=>beaten.has(p));}
+    case 'vs2':      {const beaten=new Set(todW.filter(x=>x.mode==='1v1').map(x=>opp1v1(x,pid)));return beaten.size>=2;}
+    case 'dclean':   return todW.filter(x=>x.score&&x.score.split(':')[1]==='0').length>=2;
+    case 'hclean':   return todW.filter(x=>x.score&&x.score.split(':')[1]==='0').length>=3;
+    case 'beer':     return didWin&&m.lastSetWinner===pid;
+    case 'moralwin': return !didWin&&m.lastSetWinner===pid;
+    case 'solo':     return m.mode==='2v1'&&m.winner==='solo'&&m.solo===pid;
+    case 'team':     return m.mode==='2v1'&&m.winner==='team'&&(m.teamA===pid||m.teamB===pid);
+    case 'soloclean':return m.mode==='2v1'&&m.winner==='solo'&&m.solo===pid&&scL[1]==='0';
+    case 'avenger':  {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);return!!histP.slice().reverse().find(x=>x.mode==='1v1'&&playedIn(x,o)&&winnerOf(x)===o);}
+    case 'nemesis':  {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);const ms=histP.filter(x=>x.mode==='1v1'&&playedIn(x,o));const wins=ms.filter(x=>winnerOf(x)===pid).length;return ms.length>=2&&wins<ms.length-wins;}
+    case 'sportrev': {if(!didWin)return false;const prev=histP.filter(x=>x.sport===m.sport);return prev.length>0&&winnerOf(prev[prev.length-1])!==pid;}
+    case 'firstwin': {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);const prev=histP.filter(x=>x.mode==='1v1'&&playedIn(x,o));return prev.length>0&&prev.every(x=>winnerOf(x)!==pid);}
+    case 'beatall':  return players.filter(p=>p.id!==pid).every(o=>all.some(x=>x.mode==='1v1'&&((x.player1===pid&&x.player2===o.id&&x.winner==='1')||(x.player1===o.id&&x.player2===pid&&x.winner==='2'))));
+    case 'closeloss':return !didWin&&(sc==='2:1'||sc==='3:2');
+    case 'fsport':   {if(!didWin)return false;return!histP.some(x=>x.sport===m.sport&&winnerOf(x)===pid);}
   }
   return false;
 }
