@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Rocket League</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --bg: #08080f;
@@ -403,6 +405,17 @@ input:focus { border-color: var(--a); }
 
 @media (min-width: 481px) { body { border-left: 1px solid var(--t3); border-right: 1px solid var(--t3); } }
 
+/* ── SYNC DOT ── */
+.sync-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--t3); margin-left: 8px; vertical-align: middle;
+  transition: background .4s;
+}
+.sync-dot.ok  { background: var(--a3); }
+.sync-dot.err { background: var(--a2); }
+.sync-dot.spin { background: var(--a); animation: syncPulse 1s infinite; }
+@keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
 /* ── LOGIN ── */
 #login-overlay {
   position: fixed; inset: 0; z-index: 1000;
@@ -543,7 +556,7 @@ input:focus { border-color: var(--a); }
 
 <div id="v-dashboard" class="view active">
   <div id="user-chip-wrap"></div>
-  <div class="page-title">🚀 Rocket League</div>
+  <div class="page-title">🚀 Rocket League <span class="sync-dot spin" id="sync-dot" title="Synchronizace..."></span></div>
   <div id="dash-stats" class="stat-grid"></div>
   <div class="section-lbl">Zápasy</div>
   <div class="filter-bar" id="dash-filter"></div>
@@ -646,6 +659,26 @@ input:focus { border-color: var(--a); }
 <div id="toast"></div>
 
 <script>
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyDCIoc079h7LlAViz9Jsr-DEfAJNpN9248",
+  authDomain: "rocket-league-aaa44.firebaseapp.com",
+  projectId: "rocket-league-aaa44",
+  storageBucket: "rocket-league-aaa44.firebasestorage.app",
+  messagingSenderId: "549571755611",
+  appId: "1:549571755611:web:8d90fdecd5c10ed78f097e"
+});
+const db = firebase.firestore();
+
+function syncDot(state){ // 'spin'|'ok'|'err'
+  const el=document.getElementById('sync-dot');
+  if(el){ el.className='sync-dot '+state; el.title={spin:'Synchronizace…',ok:'Synchronizováno',err:'Offline'}[state]||''; }
+}
+async function fsWrite(docId, data){
+  try{ await db.collection('config').doc(docId).set(data); }
+  catch(e){ console.warn('Firestore write error:',e); syncDot('err'); }
+}
+
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const PP = ['#7c6fff','#ff5e7d','#3effa0','#ffd166','#ef476f','#06d6a0','#38bdf8','#fb923c'];
 const SCP = ['#ff9a3c','#3cb8ff','#a8e063','#ffe066','#c084fc','#f472b6','#34d399','#fb923c'];
@@ -658,11 +691,11 @@ const DS = [
 const ELO_K=32, ELO_DEF=1000;
 
 function loadP(){const s=localStorage.getItem('rp_players');return s?JSON.parse(s):[{id:'p1',name:'Pavel'},{id:'p2',name:'Filip'},{id:'p3',name:'Luděk'}]}
-function saveP(p){localStorage.setItem('rp_players',JSON.stringify(p))}
+function saveP(p){localStorage.setItem('rp_players',JSON.stringify(p));fsWrite('players',{list:p});}
 function loadS(){const s=localStorage.getItem('rp_sports');return s?JSON.parse(s):DS}
-function saveSp(s){localStorage.setItem('rp_sports',JSON.stringify(s))}
+function saveSp(s){localStorage.setItem('rp_sports',JSON.stringify(s));fsWrite('sports',{list:s});}
 function loadM(){const s=localStorage.getItem('rp_matches');return s?JSON.parse(s):[]}
-function saveM(m){localStorage.setItem('rp_matches',JSON.stringify(m))}
+function saveM(m){localStorage.setItem('rp_matches',JSON.stringify(m));fsWrite('matches',{list:m});}
 
 let players=loadP(), sports=loadS(), matches=loadM();
 const pName=id=>(players.find(p=>p.id===id)||{name:id}).name;
@@ -1147,7 +1180,7 @@ function toast(msg){const el=document.getElementById('toast');el.textContent=msg
 
 // ─── LOGIN / PIN ──────────────────────────────────────────────────────────────
 function loadPins(){const s=localStorage.getItem('rp_pins');return s?JSON.parse(s):{}}
-function savePins(p){localStorage.setItem('rp_pins',JSON.stringify(p))}
+function savePins(p){localStorage.setItem('rp_pins',JSON.stringify(p));fsWrite('pins',{data:p});}
 let pins=loadPins();
 let currentUser=sessionStorage.getItem('rp_user')||null; // playerId
 
@@ -1299,6 +1332,67 @@ function renderSettings(){
 
 document.getElementById('logout-btn')?.addEventListener('click',logout);
 
+// ─── FIRESTORE REAL-TIME SYNC ─────────────────────────────────────────────────
+function activeViewId(){ return document.querySelector('.view.active')?.id; }
+
+function startSync(){
+  syncDot('spin');
+
+  db.collection('config').doc('matches').onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const remote = snap.data().list||[];
+    // only update if different from local to avoid loop
+    if(JSON.stringify(remote)!==JSON.stringify(matches)){
+      matches=remote;
+      localStorage.setItem('rp_matches',JSON.stringify(matches));
+      if(activeViewId()==='v-dashboard') renderDashboard();
+      if(activeViewId()==='v-stats') renderStats();
+    }
+    syncDot('ok');
+  }, ()=>syncDot('err'));
+
+  db.collection('config').doc('players').onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const remote=snap.data().list||[];
+    if(JSON.stringify(remote)!==JSON.stringify(players)){
+      players=remote;
+      localStorage.setItem('rp_players',JSON.stringify(players));
+      if(activeViewId()==='v-dashboard') renderDashboard();
+    }
+  }, ()=>{});
+
+  db.collection('config').doc('sports').onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const remote=snap.data().list||[];
+    if(JSON.stringify(remote)!==JSON.stringify(sports)){
+      sports=remote;
+      localStorage.setItem('rp_sports',JSON.stringify(sports));
+      if(activeViewId()==='v-dashboard') renderDashboard();
+    }
+  }, ()=>{});
+
+  db.collection('config').doc('pins').onSnapshot(snap=>{
+    if(!snap.exists) return;
+    const remote=snap.data().data||{};
+    pins=remote;
+    localStorage.setItem('rp_pins',JSON.stringify(pins));
+  }, ()=>{});
+}
+
+// Push existing local data to Firestore if Firestore is empty
+async function initFirestore(){
+  try{
+    const doc=await db.collection('config').doc('matches').get();
+    if(!doc.exists && matches.length>0){
+      await fsWrite('matches',{list:matches});
+      await fsWrite('players',{list:players});
+      await fsWrite('sports',{list:sports});
+      if(Object.keys(pins).length) await fsWrite('pins',{data:pins});
+    }
+  }catch(e){ console.warn('Init firestore:',e); }
+  startSync();
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 if(!currentUser){
   showLoginOverlay();
@@ -1307,6 +1401,7 @@ if(!currentUser){
   renderUserChip();
 }
 renderDashboard();
+initFirestore();
 </script>
 </body>
 </html>
