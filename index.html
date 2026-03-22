@@ -584,9 +584,13 @@ input:focus { border-color: var(--a); }
   <div id="step-confirm" class="step">
     <div class="step-header"><button class="step-back" id="back-confirm">←</button><div><div class="step-title">Uložit zápas</div></div></div>
     <div id="confirm-card"></div>
-    <button class="opt-toggle" id="opt-toggle">+ Skóre / datum / poznámka</button>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Výsledek setů <span style="color:var(--a2)">*</span></label>
+      <input type="text" id="score-input" placeholder="např. 3:1 nebo 21:15, 15:21, 21:18" inputmode="text" autocomplete="off">
+      <div style="font-size:.72rem;color:var(--t2);margin-top:5px">Povinné pole — zapiš výsledek setů</div>
+    </div>
+    <button class="opt-toggle" id="opt-toggle">+ Datum / poznámka</button>
     <div class="opt-fields" id="opt-fields">
-      <div class="form-group"><label>Skóre (např. 3:1)</label><input type="text" id="score-input" placeholder="3:1" inputmode="text"></div>
       <div class="form-group"><label>Datum</label><input type="date" id="date-input"></div>
       <div class="form-group"><label>Poznámka</label><input type="text" id="note-input" placeholder="volitelně..."></div>
     </div>
@@ -753,7 +757,8 @@ function initEntry(){
   ['score-input','note-input'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('opt-fields').classList.remove('open');
-  document.getElementById('opt-toggle').textContent='+ Skóre / datum / poznámka';
+  document.getElementById('opt-toggle').textContent='+ Datum / poznámka';
+  document.getElementById('score-input').style.borderColor='';
   const sg=document.getElementById('sport-choices');
   sg.innerHTML=sports.map(s=>`
     <button class="choice-btn" data-sport="${s.id}">
@@ -861,12 +866,21 @@ function buildConfirm(){
       </div>
     </div>`;
 }
+document.getElementById('score-input').addEventListener('input',function(){this.style.borderColor='';});
 document.getElementById('opt-toggle').addEventListener('click',function(){
   const o=document.getElementById('opt-fields').classList.toggle('open');
   this.textContent=o?'− Skrýt detaily':'+ Skóre / datum / poznámka';
 });
 document.getElementById('save-btn').addEventListener('click',()=>{
   if(!E.sport||!E.mode||!E.winner){toast('⚠️ Něco chybí');return;}
+  const score=document.getElementById('score-input').value.trim();
+  if(!score){
+    document.getElementById('score-input').style.borderColor='var(--a2)';
+    document.getElementById('score-input').focus();
+    toast('⚠️ Zadej výsledek setů');
+    return;
+  }
+  document.getElementById('score-input').style.borderColor='';
   const m={id:Date.now().toString(),sport:E.sport,mode:E.mode,winner:E.winner,
     score:document.getElementById('score-input').value.trim(),
     date:document.getElementById('date-input').value,
