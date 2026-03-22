@@ -402,12 +402,147 @@ input:focus { border-color: var(--a); }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 @media (min-width: 481px) { body { border-left: 1px solid var(--t3); border-right: 1px solid var(--t3); } }
+
+/* ── LOGIN ── */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 24px calc(var(--safe-b) + 32px);
+  animation: fadeIn .3s ease;
+}
+#login-overlay.hidden { display: none; }
+.login-logo {
+  font-size: 2.8rem; margin-bottom: 6px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+.login-title {
+  font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 40px;
+  background: linear-gradient(135deg, var(--t) 40%, var(--t2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+/* Step 1: player pick */
+#login-step-player { width: 100%; }
+.login-prompt { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--t2); margin-bottom: 18px; text-align: center; }
+.player-picks { display: flex; flex-direction: column; gap: 10px; }
+.player-pick-btn {
+  background: var(--s1); border: 1.5px solid var(--t3); color: var(--t);
+  border-radius: var(--r); padding: 16px 20px; cursor: pointer;
+  font-family: inherit; display: flex; align-items: center; gap: 14px;
+  transition: border-color .15s, transform .12s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.player-pick-btn:active { transform: scale(.97); border-color: var(--a); }
+.player-pick-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.player-pick-name { font-size: 1.05rem; font-weight: 700; }
+.player-pick-sub { font-size: .75rem; color: var(--t2); margin-top: 2px; }
+
+/* Step 2: PIN */
+#login-step-pin { width: 100%; display: none; }
+#login-step-pin.active { display: block; }
+.pin-who {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 28px; justify-content: center;
+}
+.pin-who-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: #fff; }
+.pin-who-name { font-size: 1rem; font-weight: 700; }
+.pin-dots {
+  display: flex; gap: 14px; justify-content: center; margin-bottom: 36px;
+}
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--t3);
+  transition: all .15s;
+}
+.pin-dot.filled { background: var(--a); border-color: var(--a); transform: scale(1.1); }
+.pin-dot.error { background: var(--a2); border-color: var(--a2); animation: shake .3s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.pin-hint { text-align: center; font-size: .78rem; color: var(--t2); margin-bottom: 20px; }
+.numpad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 280px; margin: 0 auto;
+}
+.num-btn {
+  background: var(--s1); border: none; color: var(--t);
+  border-radius: 14px; height: 70px; font-size: 1.4rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,.2);
+  transition: background .1s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.num-btn:active { background: var(--s3); transform: scale(.93); }
+.num-btn.del { font-size: 1.2rem; color: var(--t2); }
+.num-btn.confirm { background: var(--a); color: #fff; font-size: 1rem; }
+.num-btn.confirm:active { background: #5f4fe0; }
+.login-back-btn {
+  background: none; border: none; color: var(--t2); font-size: .88rem;
+  cursor: pointer; font-family: inherit; margin-top: 20px; display: block; width: 100%; text-align: center;
+  padding: 10px;
+}
+.login-back-btn:active { color: var(--t); }
+
+/* current user chip */
+.user-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--s2); border-radius: 20px; padding: 5px 12px 5px 6px;
+  font-size: .78rem; color: var(--t2); cursor: pointer; margin-bottom: 18px;
+  transition: background .15s;
+}
+.user-chip:active { background: var(--s3); }
+.user-chip-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: #fff; }
 </style>
 </head>
 <body>
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-logo">🚀</div>
+  <div class="login-title">Rocket League</div>
+
+  <div id="login-step-player" style="width:100%">
+    <div class="login-prompt">Kdo hraje?</div>
+    <div class="player-picks" id="player-picks"></div>
+  </div>
+
+  <div id="login-step-pin">
+    <div class="pin-who">
+      <div class="pin-who-avatar" id="pin-avatar"></div>
+      <div class="pin-who-name" id="pin-name"></div>
+    </div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-hint" id="pin-hint">Zadej PIN</div>
+    <div class="numpad">
+      <button class="num-btn" data-n="1">1</button>
+      <button class="num-btn" data-n="2">2</button>
+      <button class="num-btn" data-n="3">3</button>
+      <button class="num-btn" data-n="4">4</button>
+      <button class="num-btn" data-n="5">5</button>
+      <button class="num-btn" data-n="6">6</button>
+      <button class="num-btn" data-n="7">7</button>
+      <button class="num-btn" data-n="8">8</button>
+      <button class="num-btn" data-n="9">9</button>
+      <button class="num-btn del" id="pin-del">⌫</button>
+      <button class="num-btn" data-n="0">0</button>
+      <button class="num-btn confirm" id="pin-ok">OK</button>
+    </div>
+    <button class="login-back-btn" id="login-back">← Zpět</button>
+  </div>
+</div>
+
 <div id="scroll-area">
 
 <div id="v-dashboard" class="view active">
+  <div id="user-chip-wrap"></div>
   <div class="page-title">🚀 Rocket League</div>
   <div id="dash-stats" class="stat-grid"></div>
   <div class="section-lbl">Zápasy</div>
@@ -488,8 +623,12 @@ input:focus { border-color: var(--a); }
   <button class="settings-btn" id="export-btn"><span class="s-icon">⬇</span> Export JSON</button>
   <label class="settings-btn" style="cursor:pointer"><span class="s-icon">⬆</span> Import JSON<input type="file" id="import-input" accept=".json" style="display:none"></label>
   <div style="font-size:.72rem;color:var(--t2);padding:4px 0 14px">Data jsou uložena v localStorage tohoto prohlížeče.</div>
+  <div class="section-lbl">PINy hráčů</div>
+  <div id="pin-settings"></div>
+  <div style="font-size:.72rem;color:var(--t2);padding:2px 0 14px">Nastav 4místný PIN pro každého hráče. Pokud hráč PIN nemá, může zadat libovolný — tím si ho nastaví.</div>
   <div class="section-lbl">Nebezpečná zóna</div>
   <button class="settings-btn danger" id="clear-btn"><span class="s-icon">🗑</span> Smazat všechna data</button>
+  <button class="settings-btn danger" id="logout-btn"><span class="s-icon">🚪</span> Odhlásit se</button>
 </div>
 
 </div>
@@ -992,6 +1131,167 @@ document.getElementById('clear-btn').addEventListener('click',()=>{if(!confirm('
 let _tt;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2200);}
 
+// ─── LOGIN / PIN ──────────────────────────────────────────────────────────────
+function loadPins(){const s=localStorage.getItem('rp_pins');return s?JSON.parse(s):{}}
+function savePins(p){localStorage.setItem('rp_pins',JSON.stringify(p))}
+let pins=loadPins();
+let currentUser=sessionStorage.getItem('rp_user')||null; // playerId
+
+function initials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+
+function renderUserChip(){
+  const el=document.getElementById('user-chip-wrap');
+  if(!currentUser){el.innerHTML='';return;}
+  const p=players.find(x=>x.id===currentUser);
+  if(!p){el.innerHTML='';return;}
+  const col=pColor(currentUser);
+  el.innerHTML=`<div class="user-chip" id="user-chip-btn">
+    <div class="user-chip-dot" style="background:${col}">${initials(p.name)}</div>
+    <span>${p.name}</span>
+    <span style="opacity:.4">·</span>
+    <span>Odhlásit</span>
+  </div>`;
+  document.getElementById('user-chip-btn').addEventListener('click',()=>{
+    if(confirm('Odhlásit se?')) logout();
+  });
+}
+
+function logout(){
+  sessionStorage.removeItem('rp_user');
+  currentUser=null;
+  showLoginOverlay();
+}
+
+// Login overlay
+function showLoginOverlay(){
+  const ov=document.getElementById('login-overlay');
+  ov.classList.remove('hidden');
+  showLoginStep('player');
+  renderPlayerPicks();
+}
+function hideLoginOverlay(){
+  const ov=document.getElementById('login-overlay');
+  ov.style.animation='fadeIn .2s ease reverse';
+  setTimeout(()=>{ov.classList.add('hidden');ov.style.animation='';},200);
+}
+function showLoginStep(step){
+  document.getElementById('login-step-player').style.display=step==='player'?'block':'none';
+  const ps=document.getElementById('login-step-pin');
+  ps.classList.toggle('active',step==='pin');
+}
+
+function renderPlayerPicks(){
+  const el=document.getElementById('player-picks');
+  el.innerHTML=players.map(p=>{
+    const col=pColor(p.id);
+    const hasPin=!!pins[p.id];
+    return`<button class="player-pick-btn" data-id="${p.id}">
+      <div class="player-pick-avatar" style="background:${col}">${initials(p.name)}</div>
+      <div>
+        <div class="player-pick-name">${p.name}</div>
+        <div class="player-pick-sub">${hasPin?'Zadat PIN':'Nastavit PIN'}</div>
+      </div>
+    </button>`;
+  }).join('');
+  animateChildren(el,'anim-up',60);
+  el.querySelectorAll('.player-pick-btn').forEach(b=>{
+    b.addEventListener('click',()=>startPinEntry(b.dataset.id));
+  });
+}
+
+let pinTarget='', pinBuffer='', pinSetting=false;
+function startPinEntry(playerId){
+  pinTarget=playerId; pinBuffer=''; pinSetting=!pins[playerId];
+  const p=players.find(x=>x.id===playerId);
+  const col=pColor(playerId);
+  document.getElementById('pin-avatar').style.background=col;
+  document.getElementById('pin-avatar').textContent=initials(p.name);
+  document.getElementById('pin-name').textContent=p.name;
+  document.getElementById('pin-hint').textContent=pinSetting?'Nastav si nový PIN':'Zadej PIN';
+  updatePinDots();
+  showLoginStep('pin');
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.classList.toggle('filled',i<pinBuffer.length);
+    d.classList.remove('error');
+  }
+}
+function shakePin(){
+  for(let i=0;i<4;i++) document.getElementById('pd'+i).classList.add('error');
+  pinBuffer='';
+  setTimeout(updatePinDots,400);
+}
+
+document.querySelectorAll('.num-btn[data-n]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(pinBuffer.length>=4)return;
+    pinBuffer+=b.dataset.n;
+    updatePinDots();
+    if(pinBuffer.length===4&&!document.getElementById('pin-ok'))submitPin();
+  });
+});
+document.getElementById('pin-del').addEventListener('click',()=>{pinBuffer=pinBuffer.slice(0,-1);updatePinDots();});
+document.getElementById('pin-ok').addEventListener('click',submitPin);
+document.getElementById('login-back').addEventListener('click',()=>showLoginStep('player'));
+
+function submitPin(){
+  if(pinBuffer.length<4){toast('Zadej 4 číslice');return;}
+  if(pinSetting){
+    pins[pinTarget]=pinBuffer; savePins(pins);
+    toast('✅ PIN nastaven');
+  } else {
+    if(pins[pinTarget]!==pinBuffer){shakePin();toast('❌ Špatný PIN');return;}
+  }
+  currentUser=pinTarget;
+  sessionStorage.setItem('rp_user',currentUser);
+  hideLoginOverlay();
+  renderUserChip();
+}
+
+// PIN settings section
+function renderPinSettings(){
+  const el=document.getElementById('pin-settings');
+  el.innerHTML=players.map((p,i)=>{
+    const col=PP[i%PP.length];
+    const hasPin=!!pins[p.id];
+    return`<div class="player-row">
+      <div class="color-dot" style="background:${col}"></div>
+      <span style="flex:1;font-size:.95rem">${p.name}</span>
+      <button class="settings-btn" style="width:auto;padding:9px 14px;margin:0;font-size:.82rem;${hasPin?'color:var(--t2)':'color:var(--a)'}" data-pid="${p.id}">
+        ${hasPin?'🔑 Změnit':'＋ Nastavit'}
+      </button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('button[data-pid]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      // open login overlay in set-pin mode
+      pinSetting=true;
+      startPinEntry(b.dataset.pid);
+      showLoginOverlay();
+      showLoginStep('pin');
+    });
+  });
+}
+
+// Override renderSettings to include PIN section
+const _origRenderSettings=renderSettings;
+function renderSettings(){
+  _origRenderSettings();
+  renderPinSettings();
+}
+
+document.getElementById('logout-btn')?.addEventListener('click',logout);
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+if(!currentUser){
+  showLoginOverlay();
+} else {
+  document.getElementById('login-overlay').classList.add('hidden');
+  renderUserChip();
+}
 renderDashboard();
 </script>
 </body>
