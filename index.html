@@ -294,6 +294,12 @@ input:focus { border-color: var(--a); }
 .set-remove-btn:active { opacity: 1; }
 .add-set-btn { width: 100%; background: var(--s2); border: 1px dashed rgba(255,255,255,.12); border-radius: var(--r); color: var(--t2); font-size: .88rem; font-weight: 600; padding: 10px; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; margin-bottom: 4px; }
 .add-set-btn:active { background: var(--a); color: #fff; }
+.last-set-wrap { margin: 10px 0; }
+.last-set-label { font-size: .82rem; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.last-set-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.last-set-btn { background: var(--s2); border: 1.5px solid var(--t3); border-radius: 12px; color: var(--t); padding: 12px 8px; font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; transition: background .15s, border-color .15s, color .15s; }
+.last-set-btn.active { background: rgba(255,214,0,.15); border-color: #ffd600; color: #ffd600; }
+.last-set-btn:active { filter: brightness(1.1); }
 
 /* ── STATS ── */
 .player-stat-card {
@@ -628,6 +634,10 @@ input:focus { border-color: var(--a); }
       <div id="set-rows"></div>
       <button class="add-set-btn" id="add-set-btn">＋ Přidat set</button>
     </div>
+    <div class="last-set-wrap" id="last-set-wrap">
+      <div class="last-set-label">🍺 Kdo vyhrál poslední set?</div>
+      <div class="last-set-btns" id="last-set-btns"></div>
+    </div>
     <button class="opt-toggle" id="opt-toggle">+ Datum / poznámka</button>
     <div class="opt-fields" id="opt-fields">
       <div class="form-group"><label>Datum</label><input type="date" id="date-input"></div>
@@ -872,7 +882,7 @@ function getSetScore(){
 // ─── ENTRY ───────────────────────────────────────────────────────────────────
 let E={};
 function initEntry(){
-  E={};
+  E={lastSetWinner:null};
   document.getElementById('note-input').value='';
   document.getElementById('date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('opt-fields').classList.remove('open');
@@ -985,6 +995,17 @@ function buildConfirm(){
       </div>
     </div>`;
   initSetPicker(wn,ln);
+  // last-set buttons
+  const lsEl=document.getElementById('last-set-btns');
+  let lsOpts;
+  if(E.mode==='1v1') lsOpts=[{id:E.p1,label:pName(E.p1)},{id:E.p2,label:pName(E.p2)}];
+  else lsOpts=[{id:E.solo,label:pName(E.solo)},{id:'team',label:pName(E.teamA)+' + '+pName(E.teamB)}];
+  lsEl.innerHTML=lsOpts.map(o=>`<button class="last-set-btn" data-id="${o.id}">${o.label}</button>`).join('');
+  lsEl.querySelectorAll('.last-set-btn').forEach(b=>b.addEventListener('click',()=>{
+    E.lastSetWinner=b.dataset.id;
+    lsEl.querySelectorAll('.last-set-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  }));
 }
 document.getElementById('opt-toggle').addEventListener('click',function(){
   const o=document.getElementById('opt-fields').classList.toggle('open');
@@ -1002,7 +1023,7 @@ document.getElementById('save-btn').addEventListener('click',()=>{
   }
   document.getElementById('set-picker').style.outline='';
   const m={id:Date.now().toString(),sport:E.sport,mode:E.mode,winner:E.winner,
-    score,
+    score,lastSetWinner:E.lastSetWinner||null,
     date:document.getElementById('date-input').value,
     note:document.getElementById('note-input').value.trim()};
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
@@ -1111,9 +1132,15 @@ function renderStats(){
     const win=ovo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
     const wr=tot?Math.round(win/tot*100):0;
     const col=PP[i%PP.length];
+    // beer stat: last set wins
+    const lsMatches=fm.filter(m=>m.lastSetWinner&&(m.mode==='1v1'?(m.player1===p.id||m.player2===p.id):(m.solo===p.id||m.teamA===p.id||m.teamB===p.id)));
+    const lsWins=lsMatches.filter(m=>m.lastSetWinner===p.id).length;
+    const lsUpsets=lsMatches.filter(m=>m.lastSetWinner===p.id&&(m.mode==='1v1'?((m.player1===p.id&&m.winner!=='1')||(m.player2===p.id&&m.winner!=='2')):(m.winner!=='solo'&&m.solo!==p.id)||(m.winner==='solo'&&m.solo===p.id?false:m.teamA===p.id||m.teamB===p.id))).length;
+    const beerRow=lsWins>0?`<div class="sport-row"><span>🍺 Posl. set</span><span style="color:#ffd600;font-weight:700">${lsWins}×${lsUpsets>0?` <span style="color:var(--t2);font-weight:400;font-size:.8rem">(${lsUpsets}× při prohře)</span>`:''}</span></div>`:'';
     return `<div class="player-stat-card" style="--pc:${col}">
       <div class="pname" style="color:${col}">${p.name}</div>
       ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span> / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
+      ${beerRow}
       <div class="wr-bar"><div class="wr-fill" data-wr="${wr}" style="width:0%"></div></div>
       <div class="wr-lbl">${tot?`Výhernost ${wr}% · ${win}/${tot}`:'—'}</div>
     </div>`;
@@ -1220,34 +1247,18 @@ function renderCuriosities(fm,ovo,tvo,R){
     if(as.length>=2){const sw=as.filter(m=>m.winner==='solo').length,wr=Math.round(sw/as.length*100);if(wr>=60)cards.push({icon:'💪',title:'Sólo specialista',value:`${p.name}: ${wr}% výher`,sub:`${sw}/${as.length} sólo zápasů`,prio:6});}
   });
 
-  // Beer stat: who wins the last set most often (especially when losing the match)
-  const lastSetWins={},lastSetLosses={};
-  fm.forEach(m=>{
-    if(!m.score)return;
-    const sets=m.score.split(',').map(s=>s.trim()).filter(s=>/^\d+:\d+$/.test(s));
-    if(!sets.length)return;
-    const last=sets[sets.length-1].split(':').map(Number);
-    if(last[0]===last[1])return; // tie in set, skip
-    const winnerWonLastSet=last[0]>last[1];
-    let setWinner,setLoser;
-    if(m.mode==='1v1'){
-      const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;
-      setWinner=winnerWonLastSet?w:l;
-      setLoser=winnerWonLastSet?l:w;
-    }else{
-      const w=m.winner==='solo'?m.solo:m.teamA,l=m.winner==='solo'?m.teamA:m.solo;
-      setWinner=winnerWonLastSet?w:l;
-      setLoser=winnerWonLastSet?l:w;
-    }
-    lastSetWins[setWinner]=(lastSetWins[setWinner]||0)+1;
-    // count "won last set but lost match"
-    const overallLoser=m.mode==='1v1'?(m.winner==='1'?m.player2:m.player1):(m.winner==='solo'?m.teamA:m.solo);
-    if(setWinner===overallLoser)lastSetLosses[setWinner]=(lastSetLosses[setWinner]||0)+1;
+  // Beer stat: who wins the last set most often (from explicit lastSetWinner attribute)
+  const lsWins={},lsUpsets={};
+  fm.filter(m=>m.lastSetWinner).forEach(m=>{
+    const id=m.lastSetWinner;
+    lsWins[id]=(lsWins[id]||0)+1;
+    const overallWinner=m.mode==='1v1'?(m.winner==='1'?m.player1:m.player2):m.winner==='solo'?m.solo:m.teamA;
+    if(id!==overallWinner)lsUpsets[id]=(lsUpsets[id]||0)+1;
   });
-  const beerEntries=Object.entries(lastSetWins).filter(([,v])=>v>=2).sort((a,b)=>b[1]-a[1]);
+  const beerEntries=Object.entries(lsWins).filter(([,v])=>v>=2).sort((a,b)=>b[1]-a[1]);
   if(beerEntries.length){
     const [topId,topN]=beerEntries[0];
-    const upsets=lastSetLosses[topId]||0;
+    const upsets=lsUpsets[topId]||0;
     cards.push({icon:'🍺',title:'Král posledního setu',value:`${pName(topId)}: ${topN}× vyhrál`,sub:upsets?`z toho ${upsets}× při celkové prohře`:undefined,prio:8.5});
   }
 
