@@ -276,6 +276,25 @@ input:focus { border-color: var(--a); }
 }
 .save-btn:active { filter: brightness(.9); transform: scale(.98); }
 
+/* ── SET PICKER ── */
+.set-picker { margin-bottom: 12px; }
+.set-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.set-picker-header label { font-size: .82rem; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: .05em; }
+.set-picker-cols { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; margin-bottom: 6px; }
+.set-picker-col-label { text-align: center; font-size: .78rem; font-weight: 700; color: var(--t2); padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-picker-col-label.winner { color: var(--a3); }
+.set-picker-vs-label { text-align: center; font-size: .72rem; color: var(--t3,#555); }
+.set-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 6px; align-items: center; margin-bottom: 6px; animation: fadeUp .2s ease; }
+.set-score-cell { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--s2); border-radius: 10px; padding: 6px 4px; }
+.set-score-cell .sc-btn { background: var(--s1); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--t); width: 32px; height: 32px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .12s; }
+.set-score-cell .sc-btn:active { background: var(--a); }
+.set-score-cell .sc-val { min-width: 28px; text-align: center; font-size: 1.1rem; font-weight: 800; }
+.set-vs-sep { text-align: center; font-size: .85rem; color: var(--t2); }
+.set-remove-btn { background: none; border: none; color: var(--a2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; opacity: .7; }
+.set-remove-btn:active { opacity: 1; }
+.add-set-btn { width: 100%; background: var(--s2); border: 1px dashed rgba(255,255,255,.12); border-radius: var(--r); color: var(--t2); font-size: .88rem; font-weight: 600; padding: 10px; cursor: pointer; font-family: inherit; transition: background .15s, color .15s; margin-bottom: 4px; }
+.add-set-btn:active { background: var(--a); color: #fff; }
+
 /* ── STATS ── */
 .player-stat-card {
   background: var(--s1); border-radius: var(--r); padding: 16px; margin-bottom: 10px;
@@ -574,7 +593,7 @@ input:focus { border-color: var(--a); }
     <div id="mode-pill" class="entry-pill"></div>
     <div class="choices-wrap">
       <div class="choices-grid">
-        <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span><span class="c-sub">jeden čeká</span></button>
+        <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span></button>
         <button class="choice-btn" id="btn-2v1"><span class="c-icon">👥</span><span class="c-label">2 vs 1</span><span class="c-sub">handicap</span></button>
       </div>
     </div>
@@ -597,10 +616,17 @@ input:focus { border-color: var(--a); }
   <div id="step-confirm" class="step">
     <div class="step-header"><button class="step-back" id="back-confirm">←</button><div><div class="step-title">Uložit zápas</div></div></div>
     <div id="confirm-card"></div>
-    <div class="form-group" style="margin-bottom:10px">
-      <label>Výsledek setů <span style="color:var(--a2)">*</span></label>
-      <input type="text" id="score-input" placeholder="např. 3:1 nebo 21:15, 15:21, 21:18" inputmode="text" autocomplete="off">
-      <div style="font-size:.72rem;color:var(--t2);margin-top:5px">Povinné pole — zapiš výsledek setů</div>
+    <div class="set-picker" id="set-picker">
+      <div class="set-picker-header">
+        <label>Výsledek setů <span style="color:var(--a2)">*</span></label>
+      </div>
+      <div class="set-picker-cols">
+        <div class="set-picker-col-label winner" id="sp-col-winner">Vítěz</div>
+        <div class="set-vs-label"></div>
+        <div class="set-picker-col-label" id="sp-col-loser">Poražený</div>
+      </div>
+      <div id="set-rows"></div>
+      <button class="add-set-btn" id="add-set-btn">＋ Přidat set</button>
     </div>
     <button class="opt-toggle" id="opt-toggle">+ Datum / poznámka</button>
     <div class="opt-fields" id="opt-fields">
@@ -783,15 +809,65 @@ function buildFilterBar(id, active, cb){
   }));
 }
 
+// ─── SET PICKER ──────────────────────────────────────────────────────────────
+let sets=[];
+function initSetPicker(wn='Vítěz',ln='Poražený'){
+  sets=[{w:0,l:0}];
+  document.getElementById('sp-col-winner').textContent=wn;
+  document.getElementById('sp-col-loser').textContent=ln;
+  renderSetRows();
+}
+function renderSetRows(){
+  const cont=document.getElementById('set-rows');
+  cont.innerHTML='';
+  sets.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.className='set-row';
+    row.innerHTML=`
+      <div class="set-score-cell">
+        <button class="sc-btn" onclick="adjSet(${i},'w',-1)">−</button>
+        <span class="sc-val">${s.w}</span>
+        <button class="sc-btn" onclick="adjSet(${i},'w',1)">+</button>
+      </div>
+      <div class="set-vs-sep">:</div>
+      <div class="set-score-cell">
+        <button class="sc-btn" onclick="adjSet(${i},'l',-1)">−</button>
+        <span class="sc-val">${s.l}</span>
+        <button class="sc-btn" onclick="adjSet(${i},'l',1)">+</button>
+      </div>
+      ${sets.length>1?`<button class="set-remove-btn" onclick="removeSet(${i})">✕</button>`:'<div></div>'}
+    `;
+    cont.appendChild(row);
+  });
+}
+function adjSet(i,side,d){
+  sets[i][side]=Math.max(0,sets[i][side]+d);
+  renderSetRows();
+}
+function removeSet(i){
+  sets.splice(i,1);
+  renderSetRows();
+}
+document.getElementById('add-set-btn').addEventListener('click',()=>{
+  sets.push({w:0,l:0});
+  renderSetRows();
+});
+function getSetScore(){
+  if(sets.length===0)return '';
+  const hasData=sets.some(s=>s.w>0||s.l>0);
+  if(!hasData)return '';
+  return sets.map(s=>`${s.w}:${s.l}`).join(', ');
+}
+
 // ─── ENTRY ───────────────────────────────────────────────────────────────────
 let E={};
 function initEntry(){
   E={};
-  ['score-input','note-input'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('note-input').value='';
   document.getElementById('date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('opt-fields').classList.remove('open');
   document.getElementById('opt-toggle').textContent='+ Datum / poznámka';
-  document.getElementById('score-input').style.borderColor='';
+  initSetPicker();
   const sg=document.getElementById('sport-choices');
   sg.innerHTML=sports.map(s=>`
     <button class="choice-btn" data-sport="${s.id}">
@@ -898,24 +974,24 @@ function buildConfirm(){
         ${E.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
       </div>
     </div>`;
+  initSetPicker(wn,ln);
 }
-document.getElementById('score-input').addEventListener('input',function(){this.style.borderColor='';});
 document.getElementById('opt-toggle').addEventListener('click',function(){
   const o=document.getElementById('opt-fields').classList.toggle('open');
   this.textContent=o?'− Skrýt detaily':'+ Skóre / datum / poznámka';
 });
 document.getElementById('save-btn').addEventListener('click',()=>{
   if(!E.sport||!E.mode||!E.winner){toast('⚠️ Něco chybí');return;}
-  const score=document.getElementById('score-input').value.trim();
+  const score=getSetScore();
   if(!score){
-    document.getElementById('score-input').style.borderColor='var(--a2)';
-    document.getElementById('score-input').focus();
+    document.getElementById('set-picker').style.outline='2px solid var(--a2)';
+    document.getElementById('set-picker').style.borderRadius='12px';
     toast('⚠️ Zadej výsledek setů');
     return;
   }
-  document.getElementById('score-input').style.borderColor='';
+  document.getElementById('set-picker').style.outline='';
   const m={id:Date.now().toString(),sport:E.sport,mode:E.mode,winner:E.winner,
-    score:document.getElementById('score-input').value.trim(),
+    score,
     date:document.getElementById('date-input').value,
     note:document.getElementById('note-input').value.trim()};
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
