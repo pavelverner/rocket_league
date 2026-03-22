@@ -224,8 +224,9 @@ nav {
   font-size: 1rem; font-family: inherit; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 9px;
   transition: border-color .15s, background .15s, transform .12s;
-  min-height: 88px; box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
 }
+.choice-btn-row { flex-direction: row; justify-content: center; height: 68px; }
 .choice-btn:active { transform: scale(.95); background: var(--s2); border-color: var(--a); }
 .choice-btn .c-icon { font-size: 2rem; line-height: 1; }
 .choice-btn .c-label { font-weight: 700; font-size: 1rem; }
@@ -913,7 +914,7 @@ function buildMatchup(){
   for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) pairs.push([players[i],players[j]]);
   const el=document.getElementById('matchup-list');
   el.innerHTML=pairs.map(([a,b])=>`
-    <button class="choice-btn" style="flex-direction:row;justify-content:center;height:68px;margin-bottom:10px" data-a="${a.id}" data-b="${b.id}">
+    <button class="choice-btn choice-btn-row" data-a="${a.id}" data-b="${b.id}">
       <span style="font-weight:700;font-size:1.05rem;color:${pColor(a.id)}">${a.name}</span>
       <span style="color:var(--t2);padding:0 10px;font-size:.9rem">vs</span>
       <span style="font-weight:700;font-size:1.05rem;color:${pColor(b.id)}">${b.name}</span>
@@ -927,7 +928,7 @@ function buildSolo(){
   document.getElementById('solo-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1'}]);
   const el=document.getElementById('solo-list');
   el.innerHTML=players.map(p=>`
-    <button class="choice-btn" style="flex-direction:row;justify-content:center;height:68px;margin-bottom:10px" data-id="${p.id}">
+    <button class="choice-btn choice-btn-row" data-id="${p.id}">
       <span style="font-size:1.3rem">👤</span>
       <span style="font-weight:700;font-size:1.05rem;margin-left:10px;color:${pColor(p.id)}">${p.name}</span>
       <span style="font-size:.75rem;color:var(--t2);margin-left:8px">sólo</span>
@@ -1300,14 +1301,16 @@ function renderSettings(){
 }
 
 document.getElementById('add-player-btn').addEventListener('click',()=>{
-  players.push({id:'p_'+Date.now(),name:'Nový hráč'});
-  renderSettings();
-  setTimeout(()=>{const ins=document.querySelectorAll('#player-list input[data-id]');const last=ins[ins.length-1];last?.focus();last?.select();},50);
+  const name=(prompt('Jméno hráče:')||'').trim();
+  if(!name)return;
+  players.push({id:'p_'+Date.now(),name});
+  saveP(players);renderSettings();toast('✅ Hráč přidán');
 });
 document.getElementById('add-sport-btn').addEventListener('click',()=>{
-  sports.push({id:'s_'+Date.now(),name:'Nový sport',icon:'🏅',color:SCP[sports.length%SCP.length]});
-  renderSettings();
-  setTimeout(()=>{const rows=document.querySelectorAll('#sport-list-set .sport-row-set');const last=rows[rows.length-1];last?.querySelector('.sport-name-inp')?.focus();last?.querySelector('.sport-name-inp')?.select();},50);
+  const name=(prompt('Název sportu:')||'').trim();
+  if(!name)return;
+  sports.push({id:'s_'+Date.now(),name,icon:'🏅',color:SCP[sports.length%SCP.length]});
+  saveSp(sports);renderSettings();toast('✅ Sport přidán');
 });
 document.getElementById('export-btn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({players,sports,matches},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`rocket-league-${new Date().toISOString().slice(0,10)}.json`;a.click();});
 document.getElementById('import-input').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.players||!d.matches)throw 0;if(!confirm(`Importovat ${d.matches.length} zápasů?`))return;players=d.players;matches=d.matches;if(d.sports)sports=d.sports;saveP(players);saveM(matches);saveSp(sports);toast('✅ Import hotov');renderSettings();}catch{toast('⚠️ Neplatný soubor');}};r.readAsText(f);e.target.value='';});
