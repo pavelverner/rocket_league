@@ -1418,7 +1418,17 @@ function renderMatchList(){
     const b=id=>m.lastSetWinner===id?'<span style="color:#ffd600"> 🍺</span>':'';
     if(m.mode==='1v1'){const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;ph=`<span style="color:${pColor(w)};font-weight:700">${pName(w)}${b(w)}</span> <span style="color:var(--t2)">vs</span> ${pName(l)}${b(l)}`;}
     else if(m.mode==='2v1round'){
-      ph=(m.rounds||[]).map(r=>{const won=r.winner==='solo';return`<span style="color:${pColor(r.soloId)};font-weight:${won?700:400}">${pName(r.soloId)}${won?' ✓':' ✗'}</span>`;}).join('<span style="color:var(--t3)"> · </span>');
+      ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{
+        const won=r.winner==='solo';
+        const teamNames=r.teamIds.map(pName).join('+');
+        return `<div style="display:flex;align-items:center;gap:5px">
+          <span style="color:${pColor(r.soloId)};font-weight:700;font-size:.92rem">${pName(r.soloId)}</span>
+          <span style="color:var(--t3);font-size:.7rem">vs</span>
+          <span style="color:var(--t2);font-size:.78rem;flex:1">${teamNames}</span>
+          ${r.score?`<span style="font-size:.78rem;font-weight:700;color:var(--t2)">${r.score}</span>`:''}
+          <span style="font-size:.85rem">${won?`<span style="color:var(--a3)">✓</span>`:`<span style="color:var(--a2)">✗</span>`}</span>
+        </div>`;
+      }).join('')+`</div>`;
     }
     else{const sw=m.winner==='solo';const tb=m.lastSetWinner==='team'?'<span style="color:#ffd600"> 🍺</span>':'';ph=sw?`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">vs</span> ${pName(m.teamA)}+${pName(m.teamB)}${tb}`:`${pName(m.solo)}${b(m.solo)} <span style="color:var(--t2)">vs</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
     const roundScore=m.mode==='2v1round'?(()=>{let s=0,t=0;(m.rounds||[]).forEach(r=>{r.winner==='solo'?s++:t++;});return`${s}:${t}`;})():'';
