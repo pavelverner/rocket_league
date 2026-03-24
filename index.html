@@ -1513,7 +1513,7 @@ function renderStats(){
         const rots=(m.rounds||[]);
         const myW=rots.filter(r=>(r.soloId===p.id&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team')).length;
         const myL=rots.length-myW;
-        cls=myW>0&&myL>0?'n':myW===rots.length?'w':'l';
+        cls=myW>myL?'w':myL>myW?'l':'n';
       }
       return`<div class="fd ${cls}"></div>`;
     }).join('');
