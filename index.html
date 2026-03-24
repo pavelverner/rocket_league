@@ -1496,17 +1496,20 @@ function renderStats(){
     // 1v1 stats
     const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
     const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-    // 2v1 stats (flattened rotations) – team wins count 0.5
+    // 2v1 stats (flattened rotations) – team games count 0.5, solo count 1
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
     const p2v1Win=p2v1.reduce((acc,m)=>{
       if(m.solo===p.id&&m.winner==='solo') return acc+1;
       if((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team') return acc+0.5;
       return acc;
     },0);
+    const p2v1Tot=p2v1.reduce((acc,m)=>acc+(m.solo===p.id?1:0.5),0);
     // combined
-    const totAll=pOvo.length+p2v1.length;
+    const totAll=pOvo.length+p2v1Tot;
     const winAll=pWin+p2v1Win;
+    const lossAll=totAll-winAll;
     const pWr=totAll?Math.round(winAll/totAll*100):null;
+    const fmt=n=>Number.isInteger(n)?n:n.toFixed(1);
     // form: last 5 across all modes, sorted by date
     const allPM=[...fm.filter(m=>playedIn(m,p.id))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     const formDots=allPM.map(m=>{
@@ -1530,7 +1533,7 @@ function renderStats(){
         <div class="elo-name" style="color:${pColor(p.id)}">${p.name}</div>
         ${pills?`<div class="elo-scores">${pills}</div>`:''}
         ${totAll?`<div style="display:flex;align-items:center;gap:10px;margin-top:5px">
-          <span style="font-size:.72rem;color:var(--t2)"><strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> (${winAll}/${totAll})</span>
+          <span style="font-size:.72rem;color:var(--t2)"><strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> <span style="opacity:.6">${fmt(winAll)}:${fmt(lossAll)}</span></span>
           ${formDots?`<div class="form-dots" style="margin-top:0">${formDots}</div>`:''}
         </div>`:''}
       </div>
