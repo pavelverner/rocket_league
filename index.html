@@ -488,6 +488,31 @@ input:focus { border-color: var(--a); }
 
 @media (min-width: 481px) { body { border-left: 1px solid var(--t3); border-right: 1px solid var(--t3); } }
 
+/* ── 2v1 ROUND ── */
+.round-row {
+  background: var(--s1); border-radius: var(--r);
+  padding: 14px 16px; margin-bottom: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.round-row-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.round-row-vs { font-size: .75rem; color: var(--t2); margin-left: 4px; }
+.round-wtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.round-wtn {
+  background: var(--s2); border: 1.5px solid var(--t3);
+  color: var(--t2); border-radius: 12px; padding: 10px 8px;
+  font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  text-align: center; transition: all .15s;
+}
+.round-wtn.sel-solo { border-color: var(--a); color: var(--a); background: rgba(124,111,255,.12); }
+.round-wtn.sel-team { border-color: var(--a2); color: var(--a2); background: rgba(255,94,125,.12); }
+.round-score-row { display: flex; align-items: center; gap: 8px; }
+.round-sc-cell { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--s2); border-radius: 10px; padding: 4px 6px; flex: 1; }
+.round-sc-cell .sc-btn { background: var(--s1); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--t); width: 28px; height: 28px; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.round-sc-cell .sc-btn:active { background: var(--a); }
+.round-sc-cell .sc-val { min-width: 20px; text-align: center; font-size: 1rem; font-weight: 800; }
+.round-score-lbl { display: flex; margin-top: 4px; font-size: .68rem; color: var(--t2); }
+.round-score-lbl span { flex: 1; text-align: center; }
+
 /* ── SYNC DOT ── */
 .sync-dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
@@ -673,6 +698,14 @@ input:focus { border-color: var(--a); }
     <div class="step-header"><button class="step-back" id="back-solo">←</button><div><div class="step-title">Kdo hraje sám?</div><div class="step-sub">hraje s výhodou</div></div></div>
     <div id="solo-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="solo-list"></div></div>
+  </div>
+  <div id="step-2v1round" class="step">
+    <div class="step-header"><button class="step-back" id="back-2v1round">←</button><div><div class="step-title">Kolo 2v1</div><div class="step-sub">Každý hraje jednou sám</div></div></div>
+    <div id="round-pill" class="entry-pill"></div>
+    <div id="round-rows" class="choices-wrap" style="padding-top:8px"></div>
+    <div class="form-group" style="margin-bottom:12px"><label>Datum</label><input type="date" id="round-date-input"></div>
+    <div class="form-group" style="margin-bottom:16px"><label>Poznámka</label><input type="text" id="round-note-input" placeholder="volitelně..."></div>
+    <button class="save-btn" id="round-save-btn" style="animation:none">✓ Uložit kolo</button>
   </div>
   <div id="step-winner" class="step">
     <div class="step-header"><button class="step-back" id="back-winner">←</button><div><div class="step-title">Kdo vyhrál?</div></div></div>
@@ -1082,15 +1115,16 @@ function goStep(name){
   step.classList.add('active');
   step.style.animation='none'; void step.offsetWidth; step.style.animation='slideRight .22s ease';
   buildDots(name);
-  if(name==='mode')    buildMode();
-  if(name==='matchup') buildMatchup();
-  if(name==='solo')    buildSolo();
+  if(name==='mode')      buildMode();
+  if(name==='matchup')   buildMatchup();
+  if(name==='solo')      buildSolo();
+  if(name==='2v1round')  build2v1Round();
   if(name==='winner')  buildWinner();
   if(name==='confirm') buildConfirm();
   document.getElementById('scroll-area').scrollTop=0;
 }
 function buildDots(cur){
-  const flow=E.mode==='2v1'?['sport','mode','solo','winner','confirm']:['sport','mode','matchup','winner','confirm'];
+  const flow=E.mode==='2v1'?['sport','mode','2v1round']:['sport','mode','matchup','winner','confirm'];
   const i=flow.indexOf(cur);
   document.getElementById('step-dots').innerHTML=flow.map((_,j)=>`<div class="step-dot ${j<i?'done':j===i?'active':''}"></div>`).join('');
 }
@@ -1099,7 +1133,7 @@ function pill(items){return items.map(x=>typeof x==='string'?`<span style="color
 document.getElementById('back-mode').addEventListener('click',()=>goStep('sport'));
 function buildMode(){const s=sById(E.sport);document.getElementById('mode-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color}]);}
 document.getElementById('btn-1v1').addEventListener('click',()=>{E.mode='1v1';goStep('matchup');});
-document.getElementById('btn-2v1').addEventListener('click',()=>{E.mode='2v1';goStep('solo');});
+document.getElementById('btn-2v1').addEventListener('click',()=>{E.mode='2v1';goStep('2v1round');});
 
 document.getElementById('back-matchup').addEventListener('click',()=>goStep('mode'));
 function buildMatchup(){
@@ -1128,8 +1162,79 @@ function buildSolo(){
       <span class="mu-vs">sólo</span>
       <span class="mu-player" style="color:var(--t2);font-size:.9rem">${players.filter(x=>x.id!==p.id).map(x=>x.name).join(' + ')}</span>
     </button>`).join('');
-  el.querySelectorAll('.choice-btn').forEach(b=>{b.addEventListener('click',()=>{E.solo=b.dataset.id;const t=players.filter(p=>p.id!==E.solo);E.teamA=t[0]?.id;E.teamB=t[1]?.id;goStep('winner');});});
+  el.querySelectorAll('.matchup-btn').forEach(b=>{b.addEventListener('click',()=>{E.solo=b.dataset.id;const t=players.filter(p=>p.id!==E.solo);E.teamA=t[0]?.id;E.teamB=t[1]?.id;goStep('winner');});});
 }
+
+document.getElementById('back-2v1round').addEventListener('click',()=>goStep('mode'));
+function build2v1Round(){
+  const s=sById(E.sport);
+  document.getElementById('round-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1 kolo'}]);
+  document.getElementById('round-date-input').value=new Date().toISOString().slice(0,10);
+  document.getElementById('round-note-input').value='';
+  E.round=players.map(p=>({soloId:p.id,teamIds:players.filter(x=>x.id!==p.id).map(x=>x.id),winner:null,sw:0,lw:0}));
+  renderRoundRows();
+}
+function renderRoundRows(){
+  const el=document.getElementById('round-rows');
+  el.innerHTML=E.round.map((r,i)=>{
+    const sc=pColor(r.soloId);
+    const teamNames=r.teamIds.map(pName).join(' + ');
+    return `<div class="round-row">
+      <div class="round-row-head">
+        <span style="font-size:1rem;font-weight:800;color:${sc}">${pName(r.soloId)}</span>
+        <span class="round-row-vs">sám vs ${teamNames}</span>
+      </div>
+      <div class="round-wtns">
+        <button class="round-wtn${r.winner==='solo'?' sel-solo':''}" data-ri="${i}" data-w="solo">🏆 ${pName(r.soloId)}</button>
+        <button class="round-wtn${r.winner==='team'?' sel-team':''}" data-ri="${i}" data-w="team">👥 ${teamNames}</button>
+      </div>
+      <div class="round-score-row">
+        <div class="round-sc-cell">
+          <button class="sc-btn" onclick="adjRound(${i},'sw',-1)">−</button>
+          <span class="sc-val">${r.sw}</span>
+          <button class="sc-btn" onclick="adjRound(${i},'sw',1)">+</button>
+        </div>
+        <span style="color:var(--t2);font-size:.9rem">:</span>
+        <div class="round-sc-cell">
+          <button class="sc-btn" onclick="adjRound(${i},'lw',-1)">−</button>
+          <span class="sc-val">${r.lw}</span>
+          <button class="sc-btn" onclick="adjRound(${i},'lw',1)">+</button>
+        </div>
+      </div>
+      <div class="round-score-lbl"><span style="color:${sc}">${pName(r.soloId)}</span><span>:</span><span>${teamNames}</span></div>
+    </div>`;
+  }).join('');
+  animateChildren(el,'anim-up',80);
+  el.querySelectorAll('.round-wtn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const i=parseInt(b.dataset.ri);
+      E.round[i].winner=b.dataset.w;
+      renderRoundRows();
+    });
+  });
+}
+function adjRound(i,key,d){
+  E.round[i][key]=Math.max(0,E.round[i][key]+d);
+  renderRoundRows();
+}
+document.getElementById('round-save-btn').addEventListener('click',()=>{
+  if(!E.round||!E.round.every(r=>r.winner)){toast('⚠️ Vyber výsledek pro každý zápas');return;}
+  const date=document.getElementById('round-date-input').value;
+  const note=document.getElementById('round-note-input').value.trim();
+  const base=Date.now();
+  E.round.forEach((r,i)=>{
+    const ws=r.winner==='solo'?r.sw:r.lw, ls=r.winner==='solo'?r.lw:r.sw;
+    const score=(ws>0||ls>0)?`${ws}:${ls}`:'';
+    matches.unshift({
+      id:(base+i).toString(), sport:E.sport, mode:'2v1',
+      solo:r.soloId, teamA:r.teamIds[0], teamB:r.teamIds[1],
+      winner:r.winner, score, date, note
+    });
+  });
+  saveM(matches);
+  toast('✅ Kolo uloženo!');
+  setTimeout(()=>showView('dashboard'),400);
+});
 
 document.getElementById('back-winner').addEventListener('click',()=>goStep(E.mode==='2v1'?'solo':'matchup'));
 function buildWinner(){
