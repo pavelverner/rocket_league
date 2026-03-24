@@ -1496,16 +1496,11 @@ function renderStats(){
     // 1v1 stats
     const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
     const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-    // 2v1 stats (flattened rotations) – team games count 0.5, solo count 1
+    // 2v1 stats – každá hra = 1 pro procenta (vážení 0.5 platí jen pro ELO a trend)
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
-    const p2v1Win=p2v1.reduce((acc,m)=>{
-      if(m.solo===p.id&&m.winner==='solo') return acc+1;
-      if((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team') return acc+0.5;
-      return acc;
-    },0);
-    const p2v1Tot=p2v1.reduce((acc,m)=>acc+(m.solo===p.id?1:0.5),0);
+    const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
     // combined
-    const totAll=pOvo.length+p2v1Tot;
+    const totAll=pOvo.length+p2v1.length;
     const winAll=pWin+p2v1Win;
     const lossAll=totAll-winAll;
     const pWr=totAll?Math.round(winAll/totAll*100):null;
