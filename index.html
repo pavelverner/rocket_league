@@ -1417,14 +1417,23 @@ function renderMatchList(){
     const b=id=>m.lastSetWinner===id?'<span style="color:#ffd600"> 🍺</span>':'';
     if(m.mode==='1v1'){const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;ph=`<span style="color:${pColor(w)};font-weight:700">${pName(w)}${b(w)}</span> <span style="color:var(--t2)">vs</span> ${pName(l)}${b(l)}`;}
     else if(m.mode==='2v1round'){
+      // normalise score to always solo:team regardless of how it was saved
+      const normScore=r=>{
+        if(!r.score)return'';
+        const [a,b]=r.score.split(':').map(Number);
+        // old format stored winner:loser → if team won and a>b, swap
+        if(r.winner==='team'&&a>b)return`${b}:${a}`;
+        return r.score;
+      };
       ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{
         const won=r.winner==='solo';
         const teamNames=r.teamIds.map(pName).join('+');
+        const sc=normScore(r);
         return `<div style="display:flex;align-items:center;gap:5px">
           <span style="color:${pColor(r.soloId)};font-weight:700;font-size:.92rem">${pName(r.soloId)}</span>
           <span style="color:var(--t3);font-size:.7rem">vs</span>
           <span style="color:var(--t2);font-size:.78rem;flex:1">${teamNames}</span>
-          ${r.score?`<span style="font-size:.78rem;font-weight:700;color:var(--t2)">${r.score}</span>`:''}
+          ${sc?`<span style="font-size:.78rem;font-weight:700;color:var(--t2)">${sc}</span>`:''}
           <span style="font-size:.85rem">${won?`<span style="color:var(--a3)">✓</span>`:`<span style="color:var(--a2)">✗</span>`}</span>
         </div>`;
       }).join('')+`</div>`;
