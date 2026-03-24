@@ -86,8 +86,7 @@ nav {
 .page-title {
   font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em;
   margin-bottom: 20px; padding-top: 4px;
-  background: linear-gradient(135deg, var(--t) 40%, var(--t2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  color: var(--t);
 }
 .section-lbl {
   font-size: .68rem; text-transform: uppercase; letter-spacing: .1em;
@@ -703,6 +702,7 @@ input:focus { border-color: var(--a); }
     <div class="step-header"><button class="step-back" id="back-2v1round">←</button><div><div class="step-title">Kolo 2v1</div><div class="step-sub">Každý hraje jednou sám</div></div></div>
     <div id="round-pill" class="entry-pill"></div>
     <div id="round-rows" class="choices-wrap" style="padding-top:8px"></div>
+    <div class="chal-mark-wrap" id="round-chal-wrap"></div>
     <div class="form-group" style="margin-bottom:12px"><label>Datum</label><input type="date" id="round-date-input"></div>
     <div class="form-group" style="margin-bottom:16px"><label>Poznámka</label><input type="text" id="round-note-input" placeholder="volitelně..."></div>
     <button class="save-btn" id="round-save-btn" style="animation:none">✓ Uložit kolo</button>
@@ -1172,7 +1172,21 @@ function build2v1Round(){
   document.getElementById('round-date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('round-note-input').value='';
   E.round=players.map(p=>({soloId:p.id,teamIds:players.filter(x=>x.id!==p.id).map(x=>x.id),winner:null,sw:0,lw:0}));
+  E.chalMarked=new Set();
   renderRoundRows();
+  // challenge box
+  const ch=todayChallenge();
+  const mw=document.getElementById('round-chal-wrap');
+  mw.innerHTML=`<div class="chal-mark-label">${ch.icon} <strong>${ch.title}</strong> — kdo splnil výzvu?</div><div class="chal-mark-players" id="round-chal-players"></div>`;
+  players.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.className='chal-mark-btn';btn.textContent=pName(p.id);
+    btn.addEventListener('click',()=>{
+      if(E.chalMarked.has(p.id)){E.chalMarked.delete(p.id);btn.classList.remove('on');btn.style.borderColor='';btn.style.color='';}
+      else{E.chalMarked.add(p.id);btn.classList.add('on');btn.style.borderColor=pColor(p.id);btn.style.color=pColor(p.id);}
+    });
+    document.getElementById('round-chal-players').appendChild(btn);
+  });
 }
 function renderRoundRows(){
   const el=document.getElementById('round-rows');
@@ -1214,7 +1228,10 @@ function renderRoundRows(){
   });
 }
 function adjRound(i,key,d){
-  E.round[i][key]=Math.max(0,E.round[i][key]+d);
+  const r=E.round[i];
+  r[key]=Math.max(0,r[key]+d);
+  if(r.sw>r.lw) r.winner='solo';
+  else if(r.lw>r.sw) r.winner='team';
   renderRoundRows();
 }
 document.getElementById('round-save-btn').addEventListener('click',()=>{
@@ -1222,14 +1239,22 @@ document.getElementById('round-save-btn').addEventListener('click',()=>{
   const date=document.getElementById('round-date-input').value;
   const note=document.getElementById('round-note-input').value.trim();
   const base=Date.now();
+  let celebrated=false;
   E.round.forEach((r,i)=>{
     const ws=r.winner==='solo'?r.sw:r.lw, ls=r.winner==='solo'?r.lw:r.sw;
     const score=(ws>0||ls>0)?`${ws}:${ls}`:'';
-    matches.unshift({
-      id:(base+i).toString(), sport:E.sport, mode:'2v1',
+    const m={id:(base+i).toString(), sport:E.sport, mode:'2v1',
       solo:r.soloId, teamA:r.teamIds[0], teamB:r.teamIds[1],
-      winner:r.winner, score, date, note
-    });
+      winner:r.winner, score, date, note};
+    if(i===0&&E.chalMarked&&E.chalMarked.size>0){
+      const ch=todayChallenge();
+      m.chalDone=[...E.chalMarked].map(pid=>({pid,cid:ch.id,icon:ch.icon,title:ch.title}));
+    }
+    matches.unshift(m);
+    if(!celebrated&&m.chalDone&&currentUser&&m.chalDone.some(x=>x.pid===currentUser)){
+      celebrated=true;
+      setTimeout(()=>celebrateChallenge(todayChallenge(),pName(currentUser)),500);
+    }
   });
   saveM(matches);
   toast('✅ Kolo uloženo!');
@@ -1776,7 +1801,7 @@ document.querySelectorAll('.num-btn[data-n]').forEach(b=>{
     if(pinBuffer.length>=4)return;
     pinBuffer+=b.dataset.n;
     updatePinDots();
-    if(pinBuffer.length===4&&!document.getElementById('pin-ok'))submitPin();
+    if(pinBuffer.length===4)submitPin();
   });
 });
 document.getElementById('pin-del').addEventListener('click',()=>{pinBuffer=pinBuffer.slice(0,-1);updatePinDots();});
