@@ -1272,8 +1272,7 @@ document.getElementById('round-save-btn').addEventListener('click',()=>{
   const m={
     id:Date.now().toString(), sport:E.sport, mode:'2v1round', date, note,
     rounds:E.round.map(r=>{
-      const ws=r.winner==='solo'?r.sw:r.lw, ls=r.winner==='solo'?r.lw:r.sw;
-      return {soloId:r.soloId, teamIds:r.teamIds, winner:r.winner, score:(ws>0||ls>0)?`${ws}:${ls}`:''};
+      return {soloId:r.soloId, teamIds:r.teamIds, winner:r.winner, score:(r.sw>0||r.lw>0)?`${r.sw}:${r.lw}`:''};
     })
   };
   if(E.chalMarked&&E.chalMarked.size>0){
