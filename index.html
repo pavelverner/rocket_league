@@ -1496,9 +1496,13 @@ function renderStats(){
     // 1v1 stats
     const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
     const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-    // 2v1 stats (flattened rotations)
+    // 2v1 stats (flattened rotations) – team wins count 0.5
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
-    const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
+    const p2v1Win=p2v1.reduce((acc,m)=>{
+      if(m.solo===p.id&&m.winner==='solo') return acc+1;
+      if((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team') return acc+0.5;
+      return acc;
+    },0);
     // combined
     const totAll=pOvo.length+p2v1.length;
     const winAll=pWin+p2v1Win;
@@ -1508,12 +1512,15 @@ function renderStats(){
     const formDots=allPM.map(m=>{
       let cls='l';
       if(m.mode==='1v1'){cls=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')?'w':'l';}
-      else if(m.mode==='2v1'){cls=(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')?'w':'l';}
+      else if(m.mode==='2v1'){
+        if(m.solo===p.id) cls=m.winner==='solo'?'w':'l';
+        else cls=m.winner==='team'?'n':'l'; // výhra v páru = neutrální (0.5)
+      }
       else if(m.mode==='2v1round'){
         const rots=(m.rounds||[]);
-        const myW=rots.filter(r=>(r.soloId===p.id&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team')).length;
-        const myL=rots.length-myW;
-        cls=myW>myL?'w':myL>myW?'l':'n';
+        let wW=0,wTotal=0;
+        rots.forEach(r=>{const solo=r.soloId===p.id,w=(solo&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team');const weight=solo?1:0.5;wTotal+=weight;if(w)wW+=weight;});
+        cls=wW>wTotal/2?'w':wW<wTotal/2?'l':'n';
       }
       return`<div class="fd ${cls}"></div>`;
     }).join('');
