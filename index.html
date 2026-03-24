@@ -1439,7 +1439,7 @@ function renderMatchList(){
           <span class="badge" style="background:${s.color}15;color:${s.color}">${s.name}</span>
           ${m.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
           ${m.mode==='2v1round'?'<span class="badge m2v1">2v1 kolo</span>':''}
-          ${date?`<span>${date}</span>`:''}
+          ${date?`<span style="color:var(--t);font-weight:600">📅 ${date}</span>`:''}
           ${m.note?`<span>📝 ${m.note}</span>`:''}
         </div>
       </div>
