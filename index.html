@@ -1493,19 +1493,33 @@ function renderStats(){
       return `<span class="elo-pill">${s.icon} <span class="ep-val">${sv}</span>${d?`<span class="ep-delta ${dc}">${d}</span>`:''}</span>`;
     }).filter(Boolean).join('');
     const d=eDelta(ro),dc=eDCls(ro);
+    // 1v1 stats
     const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
     const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-    const pWr=pOvo.length?Math.round(pWin/pOvo.length*100):null;
-    const formMs=[...pOvo].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
-    const formDots=formMs.map(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');return`<div class="fd ${w?'w':'l'}"></div>`;}).join('');
+    // 2v1 stats (flattened rotations)
+    const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
+    const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
+    // combined
+    const totAll=pOvo.length+p2v1.length;
+    const winAll=pWin+p2v1Win;
+    const pWr=totAll?Math.round(winAll/totAll*100):null;
+    // form: last 5 across all modes, sorted by date
+    const allPM=[...fm.filter(m=>playedIn(m,p.id))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+    const formDots=allPM.map(m=>{
+      let w=false;
+      if(m.mode==='1v1') w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');
+      else if(m.mode==='2v1') w=(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team');
+      else if(m.mode==='2v1round'){const rots=(m.rounds||[]);const myWins=rots.filter(r=>(r.soloId===p.id&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team')).length;w=myWins>rots.length/2;}
+      return`<div class="fd ${w?'w':'l'}"></div>`;
+    }).join('');
     return `<div class="elo-card">
       <div class="elo-rank">${['🥇','🥈','🥉'][i]||i+1}</div>
       <div class="elo-info">
         <div class="elo-name" style="color:${pColor(p.id)}">${p.name}</div>
         ${pills?`<div class="elo-scores">${pills}</div>`:''}
-        ${pOvo.length?`<div style="display:flex;align-items:center;gap:10px;margin-top:5px">
-          <span style="font-size:.72rem;color:var(--t2)">1v1 <strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> (${pWin}/${pOvo.length})</span>
-          ${formDots.length?`<div class="form-dots" style="margin-top:0">${formDots}</div>`:''}
+        ${totAll?`<div style="display:flex;align-items:center;gap:10px;margin-top:5px">
+          <span style="font-size:.72rem;color:var(--t2)"><strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> (${winAll}/${totAll})</span>
+          ${formDots?`<div class="form-dots" style="margin-top:0">${formDots}</div>`:''}
         </div>`:''}
       </div>
       <div><div class="elo-big" data-target="${ro}">—</div>${d?`<div class="elo-delta-big ${dc}">${d}</div>`:''}</div>
