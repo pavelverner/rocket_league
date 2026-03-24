@@ -1510,17 +1510,26 @@ function renderStats(){
     const win=ovo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
     const wr=tot?Math.round(win/tot*100):0;
     const col=PP[i%PP.length];
+    // forma: posledních 5 zápasů (1v1)
+    const formMs=[...ovo].filter(m=>m.player1===p.id||m.player2===p.id).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+    const formRow=formMs.length>=2?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:.68rem;color:var(--t2);text-transform:uppercase;letter-spacing:.08em">Forma</span>
+      <div class="form-dots" style="margin-top:0">${formMs.map(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');return`<div class="fd ${w?'w':'l'}"></div>`;}).join('')}</div>
+    </div>`:'';
     // beer stat: last set wins
     const lsMatches=fm.filter(m=>m.lastSetWinner&&(m.mode==='1v1'?(m.player1===p.id||m.player2===p.id):(m.solo===p.id||m.teamA===p.id||m.teamB===p.id)));
     const lsWins=lsMatches.filter(m=>m.lastSetWinner===p.id).length;
     const lsUpsets=lsMatches.filter(m=>m.lastSetWinner===p.id&&(m.mode==='1v1'?((m.player1===p.id&&m.winner!=='1')||(m.player2===p.id&&m.winner!=='2')):(m.winner!=='solo'&&m.solo!==p.id)||(m.winner==='solo'&&m.solo===p.id?false:m.teamA===p.id||m.teamB===p.id))).length;
     const beerRow=lsWins>0?`<div class="sport-row"><span>🍺 Poslední set</span><span style="color:#ffd600;font-weight:700">${lsWins}×${lsUpsets>0?` <span style="color:var(--t2);font-weight:400;font-size:.8rem">(${lsUpsets}× při prohře)</span>`:''}</span></div>`:'';
     return `<div class="player-stat-card" style="--pc:${col}">
-      <div class="pname" style="color:${col}">${p.name}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="pname" style="color:${col};margin-bottom:0">${p.name}</div>
+        ${tot?`<div style="text-align:right"><div style="font-size:1.5rem;font-weight:900;color:${wr>=50?'var(--a3)':'var(--a2)'};line-height:1">${wr}%</div><div style="font-size:.65rem;color:var(--t2)">${win}/${tot} výher</div></div>`:''}
+      </div>
+      ${formRow}
       ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span> / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
       ${beerRow}
-      <div class="wr-bar"><div class="wr-fill" data-wr="${wr}" style="width:0%"></div></div>
-      <div class="wr-lbl">${tot?`Výhernost ${wr}% · ${win}/${tot}`:'—'}</div>
+      <div class="wr-bar" style="margin-top:10px"><div class="wr-fill" data-wr="${wr}" style="width:0%"></div></div>
     </div>`;
   }).join('');
   animateChildren(psEl,'anim-up',70);
