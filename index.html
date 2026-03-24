@@ -1493,11 +1493,20 @@ function renderStats(){
       return `<span class="elo-pill">${s.icon} <span class="ep-val">${sv}</span>${d?`<span class="ep-delta ${dc}">${d}</span>`:''}</span>`;
     }).filter(Boolean).join('');
     const d=eDelta(ro),dc=eDCls(ro);
+    const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
+    const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
+    const pWr=pOvo.length?Math.round(pWin/pOvo.length*100):null;
+    const formMs=[...pOvo].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+    const formDots=formMs.map(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');return`<div class="fd ${w?'w':'l'}"></div>`;}).join('');
     return `<div class="elo-card">
       <div class="elo-rank">${['🥇','🥈','🥉'][i]||i+1}</div>
       <div class="elo-info">
         <div class="elo-name" style="color:${pColor(p.id)}">${p.name}</div>
         ${pills?`<div class="elo-scores">${pills}</div>`:''}
+        ${pOvo.length?`<div style="display:flex;align-items:center;gap:10px;margin-top:5px">
+          <span style="font-size:.72rem;color:var(--t2)">1v1 <strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> (${pWin}/${pOvo.length})</span>
+          ${formDots.length?`<div class="form-dots" style="margin-top:0">${formDots}</div>`:''}
+        </div>`:''}
       </div>
       <div><div class="elo-big" data-target="${ro}">—</div>${d?`<div class="elo-delta-big ${dc}">${d}</div>`:''}</div>
     </div>`;
