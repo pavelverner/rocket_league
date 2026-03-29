@@ -541,8 +541,7 @@ input:focus { border-color: var(--a); }
 }
 .login-title {
   font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 40px;
-  background: linear-gradient(135deg, var(--t) 40%, var(--t2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  color: var(--t);
 }
 /* Step 1: player pick */
 #login-step-player { width: 100%; }
@@ -685,9 +684,10 @@ input:focus { border-color: var(--a); }
     <div class="step-header"><button class="step-back" id="back-mode">←</button><div><div class="step-title">Jak hrajete?</div></div></div>
     <div id="mode-pill" class="entry-pill"></div>
     <div class="choices-wrap">
-      <div class="choices-grid">
+      <div class="choices-grid" id="mode-grid">
         <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span></button>
         <button class="choice-btn" id="btn-2v1"><span class="c-icon">👥</span><span class="c-label">2 vs 1</span><span class="c-sub">handicap</span></button>
+        <button class="choice-btn" id="btn-2v2" style="display:none"><span class="c-icon">🎾</span><span class="c-label">2 vs 2</span><span class="c-sub">čtyřhra</span></button>
       </div>
     </div>
   </div>
@@ -709,6 +709,11 @@ input:focus { border-color: var(--a); }
     <div class="form-group" style="margin-bottom:12px"><label>Datum</label><input type="date" id="round-date-input"></div>
     <div class="form-group" style="margin-bottom:16px"><label>Poznámka</label><input type="text" id="round-note-input" placeholder="volitelně..."></div>
     <button class="save-btn" id="round-save-btn" style="animation:none">✓ Uložit kolo</button>
+  </div>
+  <div id="step-2v2" class="step">
+    <div class="step-header"><button class="step-back" id="back-2v2">←</button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">čtyřhra 2v2</div></div></div>
+    <div id="2v2-pill" class="entry-pill"></div>
+    <div class="choices-wrap"><div id="2v2-list"></div></div>
   </div>
   <div id="step-winner" class="step">
     <div class="step-header"><button class="step-back" id="back-winner">←</button><div><div class="step-title">Kdo vyhrál?</div></div></div>
@@ -755,6 +760,8 @@ input:focus { border-color: var(--a); }
   <div class="h2h-wrap"><div id="h2h-table"></div></div>
   <div class="section-lbl">2 vs 1</div>
   <div id="handicap-stats"></div>
+  <div class="section-lbl">2 vs 2 (čtyřhra)</div>
+  <div id="doubles-stats"></div>
   <div class="section-lbl">Výzvy</div>
   <div id="chal-stats"></div>
   <div class="section-lbl">Kuriozity</div>
@@ -874,7 +881,34 @@ function computeElo(ml){
       R[aId][key]=Math.round(ra+ELO_K*(sa-ea));
       R[bId][key]=Math.round(rb+ELO_K*((1-sa)-(1-ea)));
     };
-    if(m.mode==='1v1'){upd(m.player1,m.player2,m.winner==='1','overall');upd(m.player1,m.player2,m.winner==='1',m.sport);}
+    if(m.mode==='1v1'){
+      // Per-set ELO: each set is a separate update
+      const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
+      for(let i=0;i<sw+sl;i++){
+        const p1won=m.winner==='1'?(i<sw):(i>=sw);
+        upd(m.player1,m.player2,p1won,'overall');
+        upd(m.player1,m.player2,p1won,m.sport);
+      }
+    }
+    else if(m.mode==='2v2'){
+      const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
+      const [a1,a2]=m.teamA,[b1,b2]=m.teamB;
+      [a1,a2,b1,b2].forEach(init);
+      ['overall',m.sport].forEach(key=>{
+        [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
+        for(let i=0;i<sw+sl;i++){
+          const tAwins=m.winner==='A'?(i<sw):(i>=sw);
+          const ra=Math.round((R[a1][key]+R[a2][key])/2);
+          const rb=Math.round((R[b1][key]+R[b2][key])/2);
+          const ea=1/(1+Math.pow(10,(rb-ra)/400));
+          const sa=tAwins?1:0;
+          const da=Math.round(ELO_K*(sa-ea));
+          const db=Math.round(ELO_K*((1-sa)-(1-ea)));
+          R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
+          R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
+        }
+      });
+    }
     else if(m.mode==='2v1round'){
       (m.rounds||[]).forEach(r=>{
         init(r.soloId);r.teamIds.forEach(init);
@@ -1019,6 +1053,7 @@ function winnerOf(m){
 function playedIn(m,pid){
   if(m.mode==='1v1') return m.player1===pid||m.player2===pid;
   if(m.mode==='2v1round') return (m.rounds||[]).some(r=>r.soloId===pid||r.teamIds.includes(pid));
+  if(m.mode==='2v2') return (m.teamA||[]).includes(pid)||(m.teamB||[]).includes(pid);
   return m.solo===pid||m.teamA===pid||m.teamB===pid;
 }
 function opp1v1(m,pid){return m.player1===pid?m.player2:m.player1;}
@@ -1114,21 +1149,32 @@ function goStep(name){
   if(name==='matchup')   buildMatchup();
   if(name==='solo')      buildSolo();
   if(name==='2v1round')  build2v1Round();
+  if(name==='2v2')       build2v2();
   if(name==='winner')  buildWinner();
   if(name==='confirm') buildConfirm();
   document.getElementById('scroll-area').scrollTop=0;
 }
 function buildDots(cur){
-  const flow=E.mode==='2v1'?['sport','mode','2v1round']:['sport','mode','matchup','winner','confirm'];
+  let flow;
+  if(E.mode==='2v1') flow=['sport','mode','2v1round'];
+  else if(E.mode==='2v2') flow=['sport','mode','2v2','winner','confirm'];
+  else flow=['sport','mode','matchup','winner','confirm'];
   const i=flow.indexOf(cur);
   document.getElementById('step-dots').innerHTML=flow.map((_,j)=>`<div class="step-dot ${j<i?'done':j===i?'active':''}"></div>`).join('');
 }
 function pill(items){return items.map(x=>typeof x==='string'?`<span style="color:var(--t2)">${x}</span>`:`<strong style="color:${x.c||'var(--t)'}">${x.t}</strong>`).join(' ')}
 
 document.getElementById('back-mode').addEventListener('click',()=>goStep('sport'));
-function buildMode(){const s=sById(E.sport);document.getElementById('mode-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color}]);}
+function buildMode(){
+  const s=sById(E.sport);
+  document.getElementById('mode-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color}]);
+  const show2v2=players.length>=4;
+  document.getElementById('btn-2v2').style.display=show2v2?'':'none';
+  document.getElementById('mode-grid').style.gridTemplateColumns=show2v2?'1fr 1fr':'1fr 1fr';
+}
 document.getElementById('btn-1v1').addEventListener('click',()=>{E.mode='1v1';goStep('matchup');});
 document.getElementById('btn-2v1').addEventListener('click',()=>{E.mode='2v1';goStep('2v1round');});
+document.getElementById('btn-2v2').addEventListener('click',()=>{E.mode='2v2';goStep('2v2');});
 
 document.getElementById('back-matchup').addEventListener('click',()=>goStep('mode'));
 function buildMatchup(){
@@ -1251,13 +1297,52 @@ document.getElementById('round-save-btn').addEventListener('click',()=>{
   setTimeout(()=>showView('dashboard'),400);
 });
 
-document.getElementById('back-winner').addEventListener('click',()=>goStep(E.mode==='2v1'?'solo':'matchup'));
+document.getElementById('back-2v2').addEventListener('click',()=>goStep('mode'));
+function build2v2(){
+  const s=sById(E.sport);
+  document.getElementById('2v2-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v2 čtyřhra'}]);
+  // Generate unique matchups: team A always contains players[0]
+  const matchups=[];
+  const p=players;
+  for(let j=1;j<p.length;j++){
+    const rest=p.filter((_,k)=>k!==0&&k!==j);
+    for(let m=0;m<rest.length-1;m++)
+      for(let n=m+1;n<rest.length;n++)
+        matchups.push({tA:[p[0],p[j]],tB:[rest[m],rest[n]]});
+  }
+  const el=document.getElementById('2v2-list');
+  el.innerHTML=matchups.map((mu,idx)=>`
+    <button class="matchup-btn" data-idx="${idx}">
+      <span class="mu-player" style="font-size:.95rem"><span style="color:${pColor(mu.tA[0].id)}">${mu.tA[0].name}</span> + <span style="color:${pColor(mu.tA[1].id)}">${mu.tA[1].name}</span></span>
+      <span class="mu-vs">vs</span>
+      <span class="mu-player" style="font-size:.95rem"><span style="color:${pColor(mu.tB[0].id)}">${mu.tB[0].name}</span> + <span style="color:${pColor(mu.tB[1].id)}">${mu.tB[1].name}</span></span>
+    </button>`).join('');
+  el.querySelectorAll('.matchup-btn').forEach((b,idx)=>{
+    const mu=matchups[idx];
+    b.addEventListener('click',()=>{
+      E.teamA=[mu.tA[0].id,mu.tA[1].id];
+      E.teamB=[mu.tB[0].id,mu.tB[1].id];
+      goStep('winner');
+    });
+  });
+}
+
+document.getElementById('back-winner').addEventListener('click',()=>{
+  if(E.mode==='2v1') goStep('solo');
+  else if(E.mode==='2v2') goStep('2v2');
+  else goStep('matchup');
+});
 function buildWinner(){
   const s=sById(E.sport);
   let si,ch;
   if(E.mode==='1v1'){
     si=[{t:pName(E.p1),c:pColor(E.p1)},'vs',{t:pName(E.p2),c:pColor(E.p2)}];
     ch=[{label:pName(E.p1),color:pColor(E.p1),val:'1'},{label:pName(E.p2),color:pColor(E.p2),val:'2'}];
+  }else if(E.mode==='2v2'){
+    const nameA=E.teamA.map(pName).join(' + ');
+    const nameB=E.teamB.map(pName).join(' + ');
+    si=[{t:nameA},'vs',{t:nameB}];
+    ch=[{label:nameA,color:'var(--t)',sub:'tým A',val:'A'},{label:nameB,color:'var(--t)',sub:'tým B',val:'B'}];
   }else{
     si=[{t:pName(E.solo),c:pColor(E.solo)},'vs',{t:pName(E.teamA)+' + '+pName(E.teamB)}];
     ch=[{label:pName(E.solo),color:pColor(E.solo),sub:'sólový',val:'solo'},{label:pName(E.teamA)+' + '+pName(E.teamB),color:'var(--t)',sub:'dvojice',val:'team'}];
@@ -1278,6 +1363,10 @@ function buildConfirm(){
   const s=sById(E.sport);
   let wn,ln,wc;
   if(E.mode==='1v1'){wn=E.winner==='1'?pName(E.p1):pName(E.p2);ln=E.winner==='1'?pName(E.p2):pName(E.p1);wc=E.winner==='1'?pColor(E.p1):pColor(E.p2);}
+  else if(E.mode==='2v2'){
+    const nameA=E.teamA.map(pName).join(' + ');const nameB=E.teamB.map(pName).join(' + ');
+    wn=E.winner==='A'?nameA:nameB;ln=E.winner==='A'?nameB:nameA;wc='var(--t)';
+  }
   else{wn=E.winner==='solo'?pName(E.solo):pName(E.teamA)+' + '+pName(E.teamB);ln=E.winner==='solo'?pName(E.teamA)+' + '+pName(E.teamB):pName(E.solo);wc=E.winner==='solo'?pColor(E.solo):'var(--t)';}
   document.getElementById('confirm-card').innerHTML=`
     <div class="confirm-card">
@@ -1287,6 +1376,7 @@ function buildConfirm(){
       <div class="c-meta">
         <span class="badge" style="background:${s.color}18;color:${s.color}">${s.icon} ${s.name}</span>
         ${E.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
+        ${E.mode==='2v2'?'<span class="badge m2v1">2v2</span>':''}
       </div>
     </div>`;
   initSetPicker(wn,ln);
@@ -1300,7 +1390,7 @@ function buildConfirm(){
   E.chalMarked=new Set();
   const mw=document.getElementById('chal-mark-wrap');
   mw.innerHTML=`<div class="chal-mark-label" id="chal-mark-label">${ch.icon} <strong>${ch.title}</strong> — kdo splnil výzvu?</div><div class="chal-mark-players" id="chal-mark-players"></div>`;
-  const matchPids=E.mode==='1v1'?[E.p1,E.p2]:[E.solo,E.teamA,E.teamB].filter(Boolean);
+  const matchPids=E.mode==='1v1'?[E.p1,E.p2]:E.mode==='2v2'?[...E.teamA,...E.teamB]:[E.solo,E.teamA,E.teamB].filter(Boolean);
   matchPids.forEach(pid=>{
     const btn=document.createElement('button');
     btn.className='chal-mark-btn';btn.textContent=pName(pid);
@@ -1314,6 +1404,7 @@ function buildConfirm(){
   const lsEl=document.getElementById('last-set-btns');
   let lsOpts;
   if(E.mode==='1v1') lsOpts=[{id:E.p1,label:pName(E.p1)},{id:E.p2,label:pName(E.p2)}];
+  else if(E.mode==='2v2') lsOpts=[{id:'A',label:E.teamA.map(pName).join(' + ')},{id:'B',label:E.teamB.map(pName).join(' + ')}];
   else lsOpts=[{id:E.solo,label:pName(E.solo)},{id:'team',label:pName(E.teamA)+' + '+pName(E.teamB)}];
   lsEl.innerHTML=lsOpts.map(o=>`<button class="last-set-btn" data-id="${o.id}">${o.label}</button>`).join('');
   lsEl.querySelectorAll('.last-set-btn').forEach(b=>b.addEventListener('click',()=>{
@@ -1342,6 +1433,7 @@ document.getElementById('save-btn').addEventListener('click',()=>{
     date:document.getElementById('date-input').value,
     note:document.getElementById('note-input').value.trim()};
   if(E.mode==='1v1'){m.player1=E.p1;m.player2=E.p2;}
+  else if(E.mode==='2v2'){m.teamA=E.teamA;m.teamB=E.teamB;}
   else{m.solo=E.solo;m.teamA=E.teamA;m.teamB=E.teamB;}
   if(E.chalMarked&&E.chalMarked.size>0){
     const ch=todayChallenge();
@@ -1402,6 +1494,11 @@ function renderMatchList(){
         </div>`;
       }).join('')+`</div>`;
     }
+    else if(m.mode==='2v2'){
+      const nameA=m.teamA.map(pName).join('+');const nameB=m.teamB.map(pName).join('+');
+      const wn=m.winner==='A'?nameA:nameB,ln=m.winner==='A'?nameB:nameA;
+      ph=`<span style="font-weight:700">${wn}</span> <span style="color:var(--t2)">vs</span> ${ln}`;
+    }
     else{const sw=m.winner==='solo';const tb=m.lastSetWinner==='team'?'<span style="color:#ffd600"> 🍺</span>':'';ph=sw?`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">vs</span> ${pName(m.teamA)}+${pName(m.teamB)}${tb}`:`${pName(m.solo)}${b(m.solo)} <span style="color:var(--t2)">vs</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
     const roundScore=m.mode==='2v1round'?(()=>{let s=0,t=0;(m.rounds||[]).forEach(r=>{r.winner==='solo'?s++:t++;});return`${s}:${t}`;})():'';
     return `<div class="match-card" style="--sport-color:${s.color}">
@@ -1412,6 +1509,7 @@ function renderMatchList(){
           <span class="badge" style="background:${s.color}15;color:${s.color}">${s.name}</span>
           ${m.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
           ${m.mode==='2v1round'?'<span class="badge m2v1">2v1 kolo</span>':''}
+          ${m.mode==='2v2'?'<span class="badge m2v1">2v2</span>':''}
           ${date?`<span style="color:var(--t);font-weight:600">📅 ${date}</span>`:''}
           ${m.note?`<span>📝 ${m.note}</span>`:''}
         </div>
@@ -1442,6 +1540,7 @@ function renderStats(){
   const tvo2v1=fm.filter(m=>m.mode==='2v1');
   const tvoRound=[];fm.filter(m=>m.mode==='2v1round').forEach(m=>(m.rounds||[]).forEach(r=>tvoRound.push({solo:r.soloId,teamA:r.teamIds[0],teamB:r.teamIds[1],winner:r.winner,score:r.score,sport:m.sport,date:m.date})));
   const tvo=[...tvo2v1,...tvoRound];
+  const dvo=fm.filter(m=>m.mode==='2v2');
   const R=computeElo(fm);
 
   // ELO
@@ -1451,7 +1550,7 @@ function renderStats(){
     const ro=R[p.id]?.overall||ELO_DEF;
     const pills=sports.map(s=>{
       const sv=R[p.id]?.[s.id]||ELO_DEF;
-      const has=fm.filter(m=>m.sport===s.id&&(m.mode==='1v1'?(m.player1===p.id||m.player2===p.id):(m.solo===p.id||m.teamA===p.id||m.teamB===p.id))).length;
+      const has=fm.filter(m=>m.sport===s.id&&playedIn(m,p.id)).length;
       if(!has)return'';
       const d=eDelta(sv),dc=eDCls(sv);
       return `<span class="elo-pill">${s.icon} <span class="ep-val">${sv}</span>${d?`<span class="ep-delta ${dc}">${d}</span>`:''}</span>`;
@@ -1463,9 +1562,12 @@ function renderStats(){
     // 2v1 stats – každá hra = 1 pro procenta (vážení 0.5 platí jen pro ELO a trend)
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
     const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
+    // 2v2 stats
+    const p2v2=dvo.filter(m=>(m.teamA||[]).includes(p.id)||(m.teamB||[]).includes(p.id));
+    const p2v2Win=p2v2.filter(m=>((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')).length;
     // combined
-    const totAll=pOvo.length+p2v1.length;
-    const winAll=pWin+p2v1Win;
+    const totAll=pOvo.length+p2v1.length+p2v2.length;
+    const winAll=pWin+p2v1Win+p2v2Win;
     const lossAll=totAll-winAll;
     const pWr=totAll?Math.round(winAll/totAll*100):null;
     const fmt=n=>Number.isInteger(n)?n:n.toFixed(1);
@@ -1474,6 +1576,7 @@ function renderStats(){
     const formDots=allPM.map(m=>{
       let cls='l';
       if(m.mode==='1v1'){cls=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')?'w':'l';}
+      else if(m.mode==='2v2'){cls=((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')?'w':'l';}
       else if(m.mode==='2v1'){
         if(m.solo===p.id) cls=m.winner==='solo'?'w':'l';
         else cls=m.winner==='team'?'n':'l'; // výhra v páru = neutrální (0.5)
@@ -1572,6 +1675,24 @@ function renderStats(){
         <div class="pname" style="color:${col}">${p.name}</div>
         ${as.length?`<div class="sport-row"><span>Sólo (s výhodou)</span><span><span class="w">${sw}V</span> / <span class="l">${as.length-sw}P</span></span></div>`:''}
         ${at.length?`<div class="sport-row"><span>Ve dvojici</span><span><span class="w">${tw}V</span> / <span class="l">${at.length-tw}P</span></span></div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // 2v2 doubles stats
+  const dblEl=document.getElementById('doubles-stats');
+  if(!dvo.length){dblEl.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné čtyřhry.</p></div>`;}
+  else{
+    dblEl.innerHTML=players.map((p,i)=>{
+      const gamesA=dvo.filter(m=>(m.teamA||[]).includes(p.id));
+      const gamesB=dvo.filter(m=>(m.teamB||[]).includes(p.id));
+      const all=[...gamesA,...gamesB];
+      if(!all.length)return'';
+      const wins=all.filter(m=>((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')).length;
+      const col=PP[i%PP.length];
+      return`<div class="player-stat-card" style="--pc:${col}">
+        <div class="pname" style="color:${col}">${p.name}</div>
+        <div class="sport-row"><span>Čtyřhra</span><span><span class="w">${wins}V</span> / <span class="l">${all.length-wins}P</span></span></div>
       </div>`;
     }).join('');
   }
