@@ -687,7 +687,7 @@ input:focus { border-color: var(--a); }
       <div class="choices-grid" id="mode-grid">
         <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span></button>
         <button class="choice-btn" id="btn-2v1"><span class="c-icon">👥</span><span class="c-label">2 vs 1</span><span class="c-sub">handicap</span></button>
-        <button class="choice-btn" id="btn-2v2" style="display:none"><span class="c-icon">🎾</span><span class="c-label">2 vs 2</span><span class="c-sub">čtyřhra</span></button>
+        <button class="choice-btn" id="btn-2v2" style="display:none"><span class="c-icon" style="font-size:1.35rem;letter-spacing:-.1em">👥👥</span><span class="c-label">2 vs 2</span><span class="c-sub">čtyřhra</span></button>
       </div>
     </div>
   </div>
@@ -1301,30 +1301,50 @@ document.getElementById('back-2v2').addEventListener('click',()=>goStep('mode'))
 function build2v2(){
   const s=sById(E.sport);
   document.getElementById('2v2-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v2 čtyřhra'}]);
-  // Generate unique matchups: team A always contains players[0]
-  const matchups=[];
-  const p=players;
-  for(let j=1;j<p.length;j++){
-    const rest=p.filter((_,k)=>k!==0&&k!==j);
-    for(let m=0;m<rest.length-1;m++)
-      for(let n=m+1;n<rest.length;n++)
-        matchups.push({tA:[p[0],p[j]],tB:[rest[m],rest[n]]});
-  }
-  const el=document.getElementById('2v2-list');
-  el.innerHTML=matchups.map((mu,idx)=>`
-    <button class="matchup-btn" data-idx="${idx}">
-      <span class="mu-player" style="font-size:.95rem"><span style="color:${pColor(mu.tA[0].id)}">${mu.tA[0].name}</span> + <span style="color:${pColor(mu.tA[1].id)}">${mu.tA[1].name}</span></span>
-      <span class="mu-vs">vs</span>
-      <span class="mu-player" style="font-size:.95rem"><span style="color:${pColor(mu.tB[0].id)}">${mu.tB[0].name}</span> + <span style="color:${pColor(mu.tB[1].id)}">${mu.tB[1].name}</span></span>
-    </button>`).join('');
-  el.querySelectorAll('.matchup-btn').forEach((b,idx)=>{
-    const mu=matchups[idx];
-    b.addEventListener('click',()=>{
-      E.teamA=[mu.tA[0].id,mu.tA[1].id];
-      E.teamB=[mu.tB[0].id,mu.tB[1].id];
-      goStep('winner');
+  let tA=[],tB=[];
+  function render(){
+    const pool=players.filter(p=>!tA.includes(p.id)&&!tB.includes(p.id));
+    const ready=tA.length===2&&tB.length===2;
+    const teamBox=(label,color,ids)=>`
+      <div style="background:var(--s1);border-radius:12px;padding:12px;border:1.5px solid ${ids.length===2?'var(--a3)':'var(--t3)'}">
+        <div style="font-size:.62rem;color:${color};text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">${label}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-height:38px">
+          ${ids.map(id=>`<button class="chal-mark-btn on tp-btn" data-id="${id}" style="color:${pColor(id)};border-color:${pColor(id)}">${pName(id)} <span style="opacity:.5;font-size:.8em">✕</span></button>`).join('')}
+          ${ids.length<2?`<span style="font-size:.78rem;color:var(--t3)">${2-ids.length===1?'1 hráč chybí':'2 hráči chybí'}</span>`:''}
+        </div>
+      </div>`;
+    document.getElementById('2v2-list').innerHTML=`
+      <div style="margin-bottom:14px">
+        <div style="font-size:.62rem;color:var(--t2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Vyber hráče (kliknutím přidáš do týmu)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px" id="2v2-pool">
+          ${pool.map(p=>`<button class="chal-mark-btn pp-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${pColor(p.id)}60">${p.name}</button>`).join('')}
+          ${pool.length===0?'<span style="font-size:.8rem;color:var(--t3)">Všichni přiřazeni</span>':''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${teamBox('Tým A','var(--a3)',tA)}
+        ${teamBox('Tým B','var(--a2)',tB)}
+      </div>
+      <button class="save-btn" id="2v2-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit →</button>`;
+    document.getElementById('2v2-list').querySelectorAll('.pp-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const id=b.dataset.id;
+        if(tA.length<2) tA.push(id);
+        else if(tB.length<2) tB.push(id);
+        render();
+      });
     });
-  });
+    document.getElementById('2v2-list').querySelectorAll('.tp-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const id=b.dataset.id;
+        tA=tA.filter(x=>x!==id); tB=tB.filter(x=>x!==id);
+        render();
+      });
+    });
+    const ok=document.getElementById('2v2-ok');
+    if(ok) ok.addEventListener('click',()=>{E.teamA=tA;E.teamB=tB;goStep('winner');});
+  }
+  render();
 }
 
 document.getElementById('back-winner').addEventListener('click',()=>{
