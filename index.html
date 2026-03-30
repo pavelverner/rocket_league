@@ -685,12 +685,9 @@ input:focus { border-color: var(--a); }
     <div id="mode-pill" class="entry-pill"></div>
     <div class="choices-wrap">
       <div class="choices-grid" id="mode-grid">
-        <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span><span class="c-sub">klasické</span></button>
-        <button class="choice-btn" id="btn-1v1round" style="display:none"><span class="c-icon">🔄</span><span class="c-label">1 vs 1</span><span class="c-sub">rotace</span></button>
-        <button class="choice-btn" id="btn-2v1"><span class="c-icon">👥</span><span class="c-label">2 vs 1</span><span class="c-sub">klasické</span></button>
-        <button class="choice-btn" id="btn-2v1round"><span class="c-icon">🔄</span><span class="c-label">2 vs 1</span><span class="c-sub">rotace</span></button>
-        <button class="choice-btn" id="btn-2v2" style="display:none"><span class="c-icon" style="font-size:1.35rem;letter-spacing:-.1em">👥👥</span><span class="c-label">2 vs 2</span><span class="c-sub">klasické</span></button>
-        <button class="choice-btn" id="btn-2v2round" style="display:none"><span class="c-icon">🔄</span><span class="c-label">2 vs 2</span><span class="c-sub">rotace párů</span></button>
+        <button class="choice-btn" id="btn-1v1"><span class="c-icon">👤</span><span class="c-label">1 vs 1</span></button>
+        <button class="choice-btn" id="btn-2v1"><span class="c-icon">👥</span><span class="c-label">2 vs 1</span></button>
+        <button class="choice-btn" id="btn-2v2" style="display:none"><span class="c-icon" style="font-size:1.35rem;letter-spacing:-.1em">👥👥</span><span class="c-label">2 vs 2</span></button>
       </div>
     </div>
   </div>
@@ -705,7 +702,7 @@ input:focus { border-color: var(--a); }
     <div class="choices-wrap"><div id="solo-list"></div></div>
   </div>
   <div id="step-1v1pick" class="step">
-    <div class="step-header"><button class="step-back" id="back-1v1pick">←</button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">vyber 3 hráče</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-1v1pick">←</button><div><div class="step-title">Kdo hraje?</div></div></div>
     <div id="1v1pick-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="1v1pick-list"></div></div>
   </div>
@@ -1215,7 +1212,7 @@ function goStep(name){
 }
 function buildDots(cur){
   let flow;
-  if(E.mode==='1v1') flow=['sport','mode','matchup','winner','confirm'];
+  if(E.mode==='1v1') flow=['sport','mode','1v1pick','winner','confirm'];
   else if(E.mode==='1v1round') flow=['sport','mode','1v1pick','1v1round'];
   else if(E.mode==='2v1') flow=['sport','mode','2v1pick','solo','winner','confirm'];
   else if(E.mode==='2v1round') flow=['sport','mode','2v1pick','2v1round'];
@@ -1231,18 +1228,11 @@ document.getElementById('back-mode').addEventListener('click',()=>goStep('sport'
 function buildMode(){
   const s=sById(E.sport);
   document.getElementById('mode-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color}]);
-  const n=players.length;
-  document.getElementById('btn-1v1round').style.display=n>=3?'':'none';
-  document.getElementById('btn-2v1round').style.display=n>=3?'':'none';
-  document.getElementById('btn-2v2').style.display=n>=4?'':'none';
-  document.getElementById('btn-2v2round').style.display=n>=4?'':'none';
+  document.getElementById('btn-2v2').style.display=players.length>=4?'':'none';
 }
-document.getElementById('btn-1v1').addEventListener('click',()=>{E.mode='1v1';goStep('matchup');});
-document.getElementById('btn-1v1round').addEventListener('click',()=>{E.mode='1v1round';goStep('1v1pick');});
+document.getElementById('btn-1v1').addEventListener('click',()=>{E.mode='1v1';goStep('1v1pick');});
 document.getElementById('btn-2v1').addEventListener('click',()=>{E.mode='2v1';goStep('2v1pick');});
-document.getElementById('btn-2v1round').addEventListener('click',()=>{E.mode='2v1round';goStep('2v1pick');});
 document.getElementById('btn-2v2').addEventListener('click',()=>{E.mode='2v2';goStep('2v2');});
-document.getElementById('btn-2v2round').addEventListener('click',()=>{E.mode='2v2round';goStep('2v2');});
 
 document.getElementById('back-matchup').addEventListener('click',()=>goStep('mode'));
 function buildMatchup(){
@@ -1281,28 +1271,46 @@ function buildSolo(){
 document.getElementById('back-1v1pick').addEventListener('click',()=>goStep('mode'));
 function build1v1Pick(){
   const s=sById(E.sport);
-  document.getElementById('1v1pick-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'1v1 rotace'}]);
+  let rotation=false;
   let picked=new Set();
   function render(){
-    const ready=picked.size===3;
+    const need=rotation?3:2;
+    const ready=picked.size===need;
+    document.getElementById('1v1pick-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:rotation?'1v1 rotace':'1v1'}]);
     document.getElementById('1v1pick-list').innerHTML=`
-      <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber přesně 3 hráče:</div>
+      ${players.length>=3?`<div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="round-wtn${!rotation?' sel-solo':''}" id="pp1-classic" style="flex:1">Klasické</button>
+        <button class="round-wtn${rotation?' sel-solo':''}" id="pp1-rotation" style="flex:1">Rotační</button>
+      </div>`:''}
+      <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber ${need} hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
         ${players.map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp1-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
       </div>
-      <button class="save-btn" id="1v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/3) →</button>`;
+      <button class="save-btn" id="1v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/${need}) →</button>`;
+    if(players.length>=3){
+      document.getElementById('pp1-classic').addEventListener('click',()=>{rotation=false;picked=new Set();render();});
+      document.getElementById('pp1-rotation').addEventListener('click',()=>{rotation=true;picked=new Set();render();});
+    }
     document.getElementById('1v1pick-list').querySelectorAll('.pp1-btn').forEach(b=>{
       b.addEventListener('click',()=>{
         const id=b.dataset.id;
         if(picked.has(id)) picked.delete(id);
-        else if(picked.size<3) picked.add(id);
+        else if(picked.size<need) picked.add(id);
         render();
       });
     });
     const ok=document.getElementById('1v1pick-ok');
     if(ok) ok.addEventListener('click',()=>{
-      E.pickedPlayers=[...picked].map(id=>players.find(p=>p.id===id));
-      goStep('1v1round');
+      if(rotation){
+        E.mode='1v1round';
+        E.pickedPlayers=[...picked].map(id=>players.find(p=>p.id===id));
+        goStep('1v1round');
+      } else {
+        E.mode='1v1';
+        const [id1,id2]=[...picked];
+        E.p1=id1;E.p2=id2;
+        goStep('winner');
+      }
     });
   }
   render();
@@ -1418,16 +1426,23 @@ document.getElementById('2v2round-save-btn').addEventListener('click',()=>{
 document.getElementById('back-2v1pick').addEventListener('click',()=>goStep('mode'));
 function build2v1Pick(){
   const s=sById(E.sport);
-  document.getElementById('2v1pick-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1 kolo'}]);
+  let rotation=false;
   let picked=new Set();
   function render(){
     const ready=picked.size===3;
+    document.getElementById('2v1pick-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:rotation?'2v1 rotace':'2v1'}]);
     document.getElementById('2v1pick-list').innerHTML=`
-      <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber přesně 3 hráče, kteří budou hrát kolo:</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="round-wtn${!rotation?' sel-solo':''}" id="pp2-classic" style="flex:1">Klasické</button>
+        <button class="round-wtn${rotation?' sel-solo':''}" id="pp2-rotation" style="flex:1">Rotační</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber 3 hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
         ${players.map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp2-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
       </div>
       <button class="save-btn" id="2v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/3) →</button>`;
+    document.getElementById('pp2-classic').addEventListener('click',()=>{rotation=false;render();});
+    document.getElementById('pp2-rotation').addEventListener('click',()=>{rotation=true;render();});
     document.getElementById('2v1pick-list').querySelectorAll('.pp2-btn').forEach(b=>{
       b.addEventListener('click',()=>{
         const id=b.dataset.id;
@@ -1439,8 +1454,8 @@ function build2v1Pick(){
     const ok=document.getElementById('2v1pick-ok');
     if(ok) ok.addEventListener('click',()=>{
       E.pickedPlayers=[...picked].map(id=>players.find(p=>p.id===id));
-      if(E.mode==='2v1round') goStep('2v1round');
-      else goStep('solo');
+      if(rotation){E.mode='2v1round';goStep('2v1round');}
+      else{E.mode='2v1';goStep('solo');}
     });
   }
   render();
@@ -1541,11 +1556,12 @@ document.getElementById('round-save-btn').addEventListener('click',()=>{
 document.getElementById('back-2v2').addEventListener('click',()=>goStep('mode'));
 function build2v2(){
   const s=sById(E.sport);
-  document.getElementById('2v2-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v2 čtyřhra'}]);
+  let rotation=false;
   let tA=[],tB=[];
   function render(){
     const pool=players.filter(p=>!tA.includes(p.id)&&!tB.includes(p.id));
     const ready=tA.length===2&&tB.length===2;
+    document.getElementById('2v2-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:rotation?'2v2 rotace':'2v2 čtyřhra'}]);
     const teamBox=(label,color,ids)=>`
       <div style="background:var(--s1);border-radius:12px;padding:12px;border:1.5px solid ${ids.length===2?'var(--a3)':'var(--t3)'}">
         <div style="font-size:.62rem;color:${color};text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">${label}</div>
@@ -1555,6 +1571,10 @@ function build2v2(){
         </div>
       </div>`;
     document.getElementById('2v2-list').innerHTML=`
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="round-wtn${!rotation?' sel-solo':''}" id="2v2-classic" style="flex:1">Klasické</button>
+        <button class="round-wtn${rotation?' sel-solo':''}" id="2v2-rotation" style="flex:1">Rotační</button>
+      </div>
       <div style="margin-bottom:14px">
         <div style="font-size:.62rem;color:var(--t2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Vyber hráče (kliknutím přidáš do týmu)</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px" id="2v2-pool">
@@ -1567,6 +1587,8 @@ function build2v2(){
         ${teamBox('Tým B','var(--a2)',tB)}
       </div>
       <button class="save-btn" id="2v2-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit →</button>`;
+    document.getElementById('2v2-classic').addEventListener('click',()=>{rotation=false;render();});
+    document.getElementById('2v2-rotation').addEventListener('click',()=>{rotation=true;render();});
     document.getElementById('2v2-list').querySelectorAll('.pp-btn').forEach(b=>{
       b.addEventListener('click',()=>{
         const id=b.dataset.id;
@@ -1583,7 +1605,7 @@ function build2v2(){
       });
     });
     const ok=document.getElementById('2v2-ok');
-    if(ok) ok.addEventListener('click',()=>{E.teamA=tA;E.teamB=tB;if(E.mode==='2v2round')goStep('2v2round');else goStep('winner');});
+    if(ok) ok.addEventListener('click',()=>{E.teamA=tA;E.teamB=tB;if(rotation){E.mode='2v2round';goStep('2v2round');}else{E.mode='2v2';goStep('winner');}});
   }
   render();
 }
@@ -1591,7 +1613,7 @@ function build2v2(){
 document.getElementById('back-winner').addEventListener('click',()=>{
   if(E.mode==='2v1') goStep('solo');
   else if(E.mode==='2v2') goStep('2v2');
-  else goStep('matchup');
+  else goStep('1v1pick');
 });
 function buildWinner(){
   const s=sById(E.sport);
