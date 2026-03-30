@@ -994,6 +994,16 @@ const eDCls=v=>v>ELO_DEF?'up':v<ELO_DEF?'down':'';
 
 // ─── ROUTING ─────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab[data-view]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+window.addEventListener('popstate',()=>{
+  const vNew=document.getElementById('v-new-match');
+  if(!vNew||!vNew.classList.contains('active'))return;
+  const activeStep=document.querySelector('.step.active');
+  if(!activeStep)return;
+  const backBtn=activeStep.querySelector('.step-back');
+  if(backBtn) backBtn.click();
+  else showView('dashboard');
+  if(vNew.classList.contains('active')) history.pushState({wizard:true},'');
+});
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('v-'+name).classList.add('active');
@@ -1190,6 +1200,7 @@ function initEntry(){
   const cols=sports.length<=2?sports.length:sports.length<=4?2:3;
   sg.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   goStep('sport');
+  history.pushState({wizard:true},'');
 }
 function goStep(name){
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
@@ -1256,13 +1267,12 @@ function buildSolo(){
   const ps=E.pickedPlayers&&E.pickedPlayers.length===3?E.pickedPlayers:players;
   document.getElementById('solo-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1'}]);
   const el=document.getElementById('solo-list');
-  el.innerHTML=ps.map(p=>`
-    <button class="matchup-btn" data-id="${p.id}">
-      <span class="mu-player" style="color:${pColor(p.id)}">${p.name}</span>
-      <span class="mu-vs">sólo</span>
-      <span class="mu-player" style="color:var(--t2);font-size:.9rem">${ps.filter(x=>x.id!==p.id).map(x=>x.name).join(' + ')}</span>
-    </button>`).join('');
-  el.querySelectorAll('.matchup-btn').forEach(b=>{b.addEventListener('click',()=>{
+  el.innerHTML=`
+    <div style="font-size:.72rem;color:var(--t2);margin-bottom:16px">Kdo hraje sám?</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      ${ps.map(p=>`<button class="chal-mark-btn solo-pick-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${pColor(p.id)}60;font-size:1rem;padding:10px 20px">${p.name}</button>`).join('')}
+    </div>`;
+  el.querySelectorAll('.solo-pick-btn').forEach(b=>{b.addEventListener('click',()=>{
     E.solo=b.dataset.id;const t=ps.filter(p=>p.id!==E.solo);
     E.teamA=t[0]?.id;E.teamB=t[1]?.id;goStep('winner');
   });});
