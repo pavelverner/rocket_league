@@ -994,12 +994,13 @@ const DS = [
   {id:'badminton',name:'Badminton',icon:'🏸',color:'#3cb8ff'},
   {id:'pickleball',name:'Pickleball',icon:'🥒',color:'#a8e063'},
   {id:'tennis',name:'Tenis',icon:'🎾',color:'#ffe066'},
+  {id:'padel',name:'Padel',icon:'🎱',color:'#c084fc'},
 ];
 const ELO_K=32, ELO_DEF=1000;
 
 function loadP(){const s=localStorage.getItem('rp_players');return s?JSON.parse(s):[{id:'p1',name:'Pavel'},{id:'p2',name:'Filip'},{id:'p3',name:'Luděk'}]}
 function saveP(p){localStorage.setItem('rp_players',JSON.stringify(p));fsWrite('players',{list:p});}
-function migrateSports(list){const sq=list.find(s=>s.id==='squash');if(sq&&sq.icon==='🏓')sq.icon='⚫';return list;}
+function migrateSports(list){const sq=list.find(s=>s.id==='squash');if(sq&&sq.icon==='🏓')sq.icon='⚫';if(!list.find(s=>s.id==='padel'))list.push({id:'padel',name:'Padel',icon:'🎱',color:'#c084fc'});return list;}
 function loadS(){const s=localStorage.getItem('rp_sports');const list=s?JSON.parse(s):DS;migrateSports(list);if(s)localStorage.setItem('rp_sports',JSON.stringify(list));return list;}
 function saveSp(s){localStorage.setItem('rp_sports',JSON.stringify(s));fsWrite('sports',{list:s});}
 function loadM(){const s=localStorage.getItem('rp_matches');return s?JSON.parse(s):[]}
