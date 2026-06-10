@@ -2285,6 +2285,14 @@ function renderStats(){
   const tvo=[...tvo2v1,...tvoRound];
   const dvo=fm.filter(m=>m.mode==='2v2');
   const R=computeElo(fm);
+  // DEBUG — remove after diagnosis
+  console.log('=== ELO DEBUG ===');
+  console.log('Filter:', statsFilter, '| Matches in fm:', fm.length);
+  players.forEach(p=>{
+    const rounds1v1=fm.filter(m=>m.mode==='1v1round').flatMap(m=>(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id));
+    const wins1v1r=rounds1v1.filter(r=>(r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')).length;
+    console.log(p.name,'| overall:',R[p.id]?.overall,'| squash:',R[p.id]?.squash,'| 1v1round rounds:',rounds1v1.length,'wins:',wins1v1r,'| rounds data:',rounds1v1.map(r=>({p1:r.p1,p2:r.p2,winner:r.winner,score:r.score})));
+  });
 
   // ELO
   const sp=[...activePlayers()].sort((a,b)=>(R[b.id]?.overall||ELO_DEF)-(R[a.id]?.overall||ELO_DEF));
