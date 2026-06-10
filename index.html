@@ -2287,11 +2287,17 @@ function renderStats(){
   const R=computeElo(fm);
   // DEBUG — remove after diagnosis
   console.log('=== ELO DEBUG ===');
-  console.log('Filter:', statsFilter, '| Matches in fm:', fm.length);
+  console.log('Filter:', statsFilter, '| Matches:', fm.length);
+  fm.forEach(m=>{
+    const pids=[m.player1,m.player2,m.solo,m.teamA,m.teamB].filter(Boolean);
+    const names=pids.map(id=>pName(id)).join(', ');
+    console.log(m.mode,'|',m.sport,'| winner:',m.winner,'| score:',m.score,'| players:',names,'| p1:',pName(m.player1),'p2:',pName(m.player2));
+  });
   players.forEach(p=>{
-    const rounds1v1=fm.filter(m=>m.mode==='1v1round').flatMap(m=>(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id));
-    const wins1v1r=rounds1v1.filter(r=>(r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')).length;
-    console.log(p.name,'| overall:',R[p.id]?.overall,'| squash:',R[p.id]?.squash,'| 1v1round rounds:',rounds1v1.length,'wins:',wins1v1r,'| rounds data:',rounds1v1.map(r=>({p1:r.p1,p2:r.p2,winner:r.winner,score:r.score})));
+    const myMatches=fm.filter(m=>m.player1===p.id||m.player2===p.id||m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
+    const my1v1=myMatches.filter(m=>m.mode==='1v1');
+    const my1v1w=my1v1.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
+    console.log(p.name,'| elo:',R[p.id]?.overall,'/',R[p.id]?.squash,'| 1v1:',my1v1w,'W',my1v1.length-my1v1w,'L');
   });
 
   // ELO
