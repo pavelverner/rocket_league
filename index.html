@@ -1041,119 +1041,104 @@ function computeElo(ml){
   const R={};
   const init=id=>{if(!R[id]){R[id]={overall:ELO_DEF};sports.forEach(s=>R[id][s.id]=ELO_DEF);}};
   players.forEach(p=>init(p.id));
+  // k = K * winnerSets/totalSets: full K for a shutout, ~K/2 for narrowest win.
+  // One update per match so winner always gains and loser always loses.
+  const kScaled=(ws,tot)=>tot>0?ELO_K*ws/tot:ELO_K;
+  const updK=(aId,bId,aw,key,k)=>{
+    init(aId);init(bId);
+    if(R[aId][key]===undefined)R[aId][key]=ELO_DEF;
+    if(R[bId][key]===undefined)R[bId][key]=ELO_DEF;
+    const ra=R[aId][key],rb=R[bId][key];
+    const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=aw?1:0;
+    R[aId][key]=Math.round(ra+k*(sa-ea));
+    R[bId][key]=Math.round(rb+k*((1-sa)-(1-ea)));
+  };
   [...ml].sort((a,b)=>new Date(a.date||0)-new Date(b.date||0)).forEach(m=>{
-    const upd=(aId,bId,aw,key)=>{
-      init(aId);init(bId);
-      if(R[aId][key]===undefined)R[aId][key]=ELO_DEF;
-      if(R[bId][key]===undefined)R[bId][key]=ELO_DEF;
-      const ra=R[aId][key],rb=R[bId][key];
-      const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=aw?1:0;
-      R[aId][key]=Math.round(ra+ELO_K*(sa-ea));
-      R[bId][key]=Math.round(rb+ELO_K*((1-sa)-(1-ea)));
-    };
     if(m.mode==='1v1'){
-      // Per-set ELO: each set is a separate update
+      // score="winner_sets:loser_sets"
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
-      for(let i=0;i<sw+sl;i++){
-        const p1won=m.winner==='1'?(i<sw):(i>=sw);
-        upd(m.player1,m.player2,p1won,'overall');
-        upd(m.player1,m.player2,p1won,m.sport);
-      }
+      const k=kScaled(sw,sw+sl);
+      const p1won=m.winner==='1';
+      ['overall',m.sport].forEach(key=>updK(m.player1,m.player2,p1won,key,k));
     }
     else if(m.mode==='1v1round'){
-      // Per-set ELO: score stored as "p1_sets:p2_sets"
+      // score="p1_sets:p2_sets"
       (m.rounds||[]).forEach(r=>{
         const [p1s,p2s]=r.score?r.score.split(':').map(Number):[0,0];
-        const tot=p1s+p2s;
-        if(tot>0){
-          for(let i=0;i<tot;i++){const p1w=i<p1s;upd(r.p1,r.p2,p1w,'overall');upd(r.p1,r.p2,p1w,m.sport);}
-        }else{upd(r.p1,r.p2,r.winner==='1','overall');upd(r.p1,r.p2,r.winner==='1',m.sport);}
+        const p1won=r.winner==='1';
+        const ws=p1won?p1s:p2s;
+        const k=kScaled(ws,p1s+p2s);
+        ['overall',m.sport].forEach(key=>updK(r.p1,r.p2,p1won,key,k));
       });
     }
     else if(m.mode==='2v2round'){
-      // Per-set ELO: score stored as "teamA_sets:teamB_sets"
+      // score="teamA_sets:teamB_sets"
       (m.rounds||[]).forEach(r=>{
         const [a1,a2]=(r.teamA||[]),[b1,b2]=(r.teamB||[]);
         if(!a1||!a2||!b1||!b2)return;
         [a1,a2,b1,b2].forEach(init);
         const [sA,sB]=r.score?r.score.split(':').map(Number):[0,0];
-        const tot=sA+sB;
+        const tAw=r.winner==='A';
+        const k=kScaled(tAw?sA:sB,sA+sB);
         ['overall',m.sport].forEach(key=>{
           [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
-          const iters=tot||1;
-          for(let i=0;i<iters;i++){
-            const tAw=tot>0?(i<sA):(r.winner==='A');
-            const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
-            const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
-            const da=Math.round(ELO_K*(sa-ea)),db=Math.round(ELO_K*((1-sa)-(1-ea)));
-            R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
-            R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
-          }
+          const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
+          const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
+          const da=Math.round(k*(sa-ea)),db=Math.round(k*((1-sa)-(1-ea)));
+          R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
+          R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
         });
       });
     }
     else if(m.mode==='2v2'){
+      // score="winner_sets:loser_sets"
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
+      const k=kScaled(sw,sw+sl);
       const [a1,a2]=m.teamA,[b1,b2]=m.teamB;
       [a1,a2,b1,b2].forEach(init);
+      const tAw=m.winner==='A';
       ['overall',m.sport].forEach(key=>{
         [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
-        for(let i=0;i<sw+sl;i++){
-          const tAwins=m.winner==='A'?(i<sw):(i>=sw);
-          const ra=Math.round((R[a1][key]+R[a2][key])/2);
-          const rb=Math.round((R[b1][key]+R[b2][key])/2);
-          const ea=1/(1+Math.pow(10,(rb-ra)/400));
-          const sa=tAwins?1:0;
-          const da=Math.round(ELO_K*(sa-ea));
-          const db=Math.round(ELO_K*((1-sa)-(1-ea)));
-          R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
-          R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
-        }
+        const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
+        const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
+        const da=Math.round(k*(sa-ea)),db=Math.round(k*((1-sa)-(1-ea)));
+        R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
+        R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
       });
     }
     else if(m.mode==='2v1round'){
-      // Per-set ELO: score stored as "solo_sets:team_sets"
+      // score="solo_sets:team_sets"
       (m.rounds||[]).forEach(r=>{
         init(r.soloId);r.teamIds.forEach(init);
         const [solS,teamS]=r.score?r.score.split(':').map(Number):[0,0];
-        const tot=solS+teamS;
-        const iters=tot||1;
-        for(let i=0;i<iters;i++){
-          const sa=tot>0?(i<solS?1:0):(r.winner==='solo'?1:0);
-          if(R[r.soloId].overall===undefined)R[r.soloId].overall=ELO_DEF;
-          r.teamIds.forEach(id=>{if(R[id].overall===undefined)R[id].overall=ELO_DEF;});
-          const rs=R[r.soloId].overall,rt=Math.round(((R[r.teamIds[0]].overall||ELO_DEF)+(R[r.teamIds[1]].overall||ELO_DEF))/2);
+        const soloW=r.winner==='solo';
+        const k=kScaled(soloW?solS:teamS,solS+teamS);
+        const sa=soloW?1:0;
+        ['overall',m.sport].forEach(key=>{
+          if(R[r.soloId][key]===undefined)R[r.soloId][key]=ELO_DEF;
+          r.teamIds.forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
+          const rs=R[r.soloId][key],rt=Math.round(((R[r.teamIds[0]][key]||ELO_DEF)+(R[r.teamIds[1]][key]||ELO_DEF))/2);
           const ea=1/(1+Math.pow(10,(rt-rs)/400));
-          const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*(ea-sa));
-          R[r.soloId].overall+=ds;r.teamIds.forEach(id=>{R[id].overall+=dt;});
-          const rss=R[r.soloId][m.sport]||ELO_DEF,rts=Math.round(((R[r.teamIds[0]][m.sport]||ELO_DEF)+(R[r.teamIds[1]][m.sport]||ELO_DEF))/2);
-          const eas=1/(1+Math.pow(10,(rts-rss)/400));
-          const ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*(eas-sa));
-          R[r.soloId][m.sport]=(R[r.soloId][m.sport]||ELO_DEF)+ds2;
-          r.teamIds.forEach(id=>{R[id][m.sport]=(R[id][m.sport]||ELO_DEF)+dt2;});
-        }
+          const ds=Math.round(k*(sa-ea)),dt=Math.round(k/2*(ea-sa));
+          R[r.soloId][key]+=ds;r.teamIds.forEach(id=>{R[id][key]+=dt;});
+        });
       });
     }
     else{
-      // Classic 2v1 — per-set ELO: score stored as "winner_sets:loser_sets"
+      // Classic 2v1 — score="winner_sets:loser_sets"
       init(m.solo);init(m.teamA);init(m.teamB);
-      const [sw,sl]=m.score?m.score.split(':').map(Number):[0,0];
-      const tot=sw+sl;
-      const iters=tot||1;
-      for(let i=0;i<iters;i++){
-        const soloW=tot>0?(m.winner==='solo'?(i<sw):(i>=sw)):(m.winner==='solo');
-        const sa=soloW?1:0;
-        const rs=R[m.solo].overall||ELO_DEF,rt=Math.round(((R[m.teamA].overall||ELO_DEF)+(R[m.teamB].overall||ELO_DEF))/2);
+      const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
+      const k=kScaled(sw||1,(sw||1)+(sl||0));
+      const soloW=m.winner==='solo',sa=soloW?1:0;
+      ['overall',m.sport].forEach(key=>{
+        if(R[m.solo][key]===undefined)R[m.solo][key]=ELO_DEF;
+        if(R[m.teamA][key]===undefined)R[m.teamA][key]=ELO_DEF;
+        if(R[m.teamB][key]===undefined)R[m.teamB][key]=ELO_DEF;
+        const rs=R[m.solo][key],rt=Math.round(((R[m.teamA][key]||ELO_DEF)+(R[m.teamB][key]||ELO_DEF))/2);
         const ea=1/(1+Math.pow(10,(rt-rs)/400));
-        const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*(ea-sa));
-        R[m.solo].overall+=ds;R[m.teamA].overall+=dt;R[m.teamB].overall+=dt;
-        const rss=R[m.solo][m.sport]||ELO_DEF,rts=Math.round(((R[m.teamA][m.sport]||ELO_DEF)+(R[m.teamB][m.sport]||ELO_DEF))/2);
-        const eas=1/(1+Math.pow(10,(rts-rss)/400));
-        const ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*(eas-sa));
-        R[m.solo][m.sport]=(R[m.solo][m.sport]||ELO_DEF)+ds2;
-        R[m.teamA][m.sport]=(R[m.teamA][m.sport]||ELO_DEF)+dt2;
-        R[m.teamB][m.sport]=(R[m.teamB][m.sport]||ELO_DEF)+dt2;
-      }
+        const ds=Math.round(k*(sa-ea)),dt=Math.round(k/2*(ea-sa));
+        R[m.solo][key]+=ds;R[m.teamA][key]+=dt;R[m.teamB][key]+=dt;
+      });
     }
   });
   return R;
@@ -2285,20 +2270,6 @@ function renderStats(){
   const tvo=[...tvo2v1,...tvoRound];
   const dvo=fm.filter(m=>m.mode==='2v2');
   const R=computeElo(fm);
-  // DEBUG — remove after diagnosis
-  console.log('=== ELO DEBUG ===');
-  console.log('Filter:', statsFilter, '| Matches:', fm.length);
-  fm.forEach(m=>{
-    const pids=[m.player1,m.player2,m.solo,m.teamA,m.teamB].filter(Boolean);
-    const names=pids.map(id=>pName(id)).join(', ');
-    console.log(m.mode,'|',m.sport,'| winner:',m.winner,'| score:',m.score,'| players:',names,'| p1:',pName(m.player1),'p2:',pName(m.player2));
-  });
-  players.forEach(p=>{
-    const myMatches=fm.filter(m=>m.player1===p.id||m.player2===p.id||m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
-    const my1v1=myMatches.filter(m=>m.mode==='1v1');
-    const my1v1w=my1v1.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-    console.log(p.name,'| elo:',R[p.id]?.overall,'/',R[p.id]?.squash,'| 1v1:',my1v1w,'W',my1v1.length-my1v1w,'L');
-  });
 
   // ELO
   const sp=[...activePlayers()].sort((a,b)=>(R[b.id]?.overall||ELO_DEF)-(R[a.id]?.overall||ELO_DEF));
