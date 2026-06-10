@@ -135,7 +135,9 @@ nav {
 .stat-card {
   background: var(--s1); border-radius: var(--r); padding: 16px 14px;
   text-align: center; box-shadow: 0 2px 16px rgba(0,0,0,.25);
+  transition: border-color .15s, box-shadow .15s; border: 1.5px solid transparent;
 }
+.stat-card-active { border-color: var(--a) !important; box-shadow: 0 0 0 2px rgba(124,111,255,.25) !important; }
 .stat-card .big { font-size: 2.2rem; font-weight: 800; color: var(--a); line-height: 1; }
 .stat-card .lbl { font-size: .75rem; color: var(--t2); margin-top: 5px; }
 
@@ -177,12 +179,33 @@ nav {
 }
 .match-card .meta { font-size: .72rem; color: var(--t2); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .match-card .score { font-size: .9rem; font-weight: 700; color: var(--t2); text-align: right; }
-.match-card .del-btn {
-  background: none; border: none; color: var(--t2); font-size: 1rem;
-  padding: 8px; cursor: pointer; opacity: .3; border-radius: 8px; flex-shrink: 0;
+.match-card .edit-btn {
+  background: none; border: none; color: var(--t2); font-size: .95rem;
+  padding: 8px; cursor: pointer; opacity: .35; border-radius: 8px; flex-shrink: 0;
   transition: opacity .15s;
 }
-.match-card .del-btn:active { opacity: 1; color: var(--a2); }
+.match-card .edit-btn:active { opacity: 1; color: var(--a); }
+/* edit modal */
+.edit-modal-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.65);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.edit-modal-sheet {
+  background: var(--s1); border-radius: 20px 20px 0 0; padding: 24px 20px 32px;
+  width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto;
+  transform: translateY(100%); transition: transform .25s cubic-bezier(.32,1,.58,1);
+}
+.edit-modal-sheet.open { transform: translateY(0); }
+.edit-modal-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 18px; }
+.edit-del-btn {
+  background: rgba(255,94,125,.12); color: var(--a2); border: none;
+  border-radius: 12px; padding: 12px 20px; font-size: .9rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.edit-cancel-btn {
+  width: 100%; background: none; border: none; color: var(--t2);
+  padding: 12px; margin-top: 4px; font-size: .9rem; cursor: pointer; font-family: inherit;
+}
 
 .badge {
   display: inline-block; padding: 2px 8px; border-radius: 20px;
@@ -201,7 +224,7 @@ nav {
 .step-back {
   background: var(--s2); border: 1.5px solid var(--t3); color: var(--t);
   min-width: 42px; height: 42px; border-radius: 12px; cursor: pointer;
-  font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1;
   flex-shrink: 0; transition: background .15s, border-color .15s, transform .1s;
 }
 .step-back:active { background: var(--a); border-color: var(--a); transform: scale(.93); }
@@ -305,6 +328,10 @@ input:focus { border-color: var(--a); }
 .ch-name { font-size: .95rem; font-weight: 700; }
 .ch-desc { font-size: .76rem; color: var(--t2); margin-top: 1px; }
 .ch-done-badge { font-size: 1.2rem; flex-shrink: 0; }
+.ch-rotate-btn { background: none; border: none; font-size: .95rem; cursor: pointer; opacity: .4; padding: 2px; transition: opacity .15s, transform .2s; }
+.ch-rotate-btn:active { opacity: 1; transform: rotate(180deg); }
+.ch-forfeit { font-size: .72rem; color: var(--a3); margin-top: 5px; font-weight: 600; }
+.co-forfeit { margin-top: 18px; background: rgba(62,255,160,.12); border: 1px solid rgba(62,255,160,.3); border-radius: 14px; padding: 12px 18px; font-size: .88rem; color: var(--a3); font-weight: 600; text-align: center; max-width: 280px; animation: popIn .4s .5s cubic-bezier(.34,1.56,.64,1) both; }
 .chal-mark-wrap { background:var(--s2); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
 .chal-mark-label { font-size:.78rem; color:var(--t2); margin-bottom:8px; }
 .chal-mark-players { display:flex; gap:8px; flex-wrap:wrap; }
@@ -618,6 +645,58 @@ input:focus { border-color: var(--a); }
 }
 .user-chip:active { background: var(--s3); }
 .user-chip-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: #fff; }
+
+/* ── VACATION ── */
+.vac-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;overflow:hidden;}
+.vac-overlay.open{display:flex;}
+.vac-overlay-inner{flex:1;overflow-y:auto;padding:20px 16px 100px;scrollbar-width:none;}
+.vac-overlay-inner::-webkit-scrollbar{display:none;}
+.vac-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.vac-pod-card{background:var(--s1);border-radius:var(--r);padding:14px 10px;text-align:center;border-top:2px solid var(--pc,var(--a));box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.vac-pod-rank{font-size:1.4rem;margin-bottom:3px;}
+.vac-pod-name{font-size:.8rem;font-weight:700;}
+.vac-pod-pts{font-size:1.6rem;font-weight:900;color:var(--pc,var(--a));}
+.vac-pod-sub{font-size:.62rem;color:var(--t2);}
+.vac-sport-card{background:var(--s1);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);border-left:3px solid var(--svc,var(--a));transition:transform .12s,background .12s;}
+.vac-sport-card:active{transform:scale(.98);background:var(--s2);}
+.vac-sport-icon{font-size:1.5rem;min-width:30px;text-align:center;}
+.vac-sport-name{font-size:.93rem;font-weight:700;}
+.vac-done-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:2px 9px;font-size:.7rem;font-weight:700;}
+.vac-round-card{background:var(--s1);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;}
+.vac-round-title{font-size:.75rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+.vac-player-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--t3);}
+.vac-player-row:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.vac-player-label{font-size:.9rem;font-weight:700;min-width:52px;}
+.vac-counter{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.vac-cbtn{background:var(--s2);border:1px solid var(--t3);color:var(--t);width:34px;height:34px;border-radius:9px;font-size:1.2rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;}
+.vac-cbtn:active{background:var(--a);}
+.vac-cval{min-width:28px;text-align:center;font-size:1.15rem;font-weight:800;}
+.vac-cmax{font-size:.72rem;color:var(--t2);}
+.vac-2v1-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.vac-2v1-btn{background:var(--s2);border:1.5px solid var(--t3);color:var(--t2);border-radius:12px;padding:10px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;transition:all .15s;}
+.vac-2v1-btn.s-solo{border-color:var(--a3);color:var(--a3);background:rgba(62,255,160,.12);}
+.vac-2v1-btn.s-team{border-color:var(--a2);color:var(--a2);background:rgba(255,94,125,.12);}
+.vac-result-table{background:var(--s1);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
+.vac-result-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--t3);}
+.vac-result-row:last-child{border-bottom:none;}
+.vac-result-rank{font-size:1.1rem;min-width:26px;text-align:center;}
+.vac-result-name{font-weight:700;font-size:.9rem;flex:1;}
+.vac-result-score{font-size:.88rem;font-weight:700;color:var(--t2);}
+.vac-rank-pick-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0 12px;}
+.vac-rank-pick{background:var(--s2);border:1.5px solid var(--t3);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-weight:700;font-size:.88rem;transition:all .15s;}
+.vac-game-list{background:var(--s2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;}
+.vac-game-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--t3);font-size:.82rem;flex-wrap:wrap;}
+.vac-game-item:last-child{border-bottom:none;}
+.vac-dist-checks{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.vac-dist-btn{flex:1;min-width:52px;background:var(--s2);border:1.5px solid var(--t3);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s;}
+.vac-dist-btn.scored{border-color:var(--a3);background:rgba(62,255,160,.15);color:var(--a3);}
+.vac-dist-btn.locked{opacity:.3;cursor:default;pointer-events:none;}
+.vac-info-box{background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:var(--t2);line-height:1.5;}
+.vac-info-box strong{color:var(--t);}
+.vac-save-btn{background:var(--a);color:#fff;border:none;border-radius:var(--r);padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;width:100%;font-family:inherit;margin-top:8px;transition:filter .15s,transform .12s;}
+.vac-save-btn:active{filter:brightness(.9);transform:scale(.98);}
+.vac-section-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t2);margin:18px 0 10px;display:flex;align-items:center;gap:10px;}
+.vac-section-lbl::after{content:'';flex:1;height:1px;background:var(--t3);}
 </style>
 </head>
 <body>
@@ -666,12 +745,50 @@ input:focus { border-color: var(--a); }
 <div id="v-dashboard" class="view active">
   <div id="user-chip-wrap"></div>
   <div class="page-title">🏸 Rocket Pals <span class="sync-dot spin" id="sync-dot" title="Synchronizace..."></span></div>
+  <div class="filter-bar" id="dash-time-filter"></div>
   <div id="dash-stats" class="stat-grid"></div>
   <div class="section-lbl">Výzva dne</div>
   <div class="challenge-card" id="daily-challenge"></div>
   <div class="section-lbl" style="margin-top:8px">Zápasy</div>
-  <div class="filter-bar" id="dash-filter"></div>
   <div id="match-list"></div>
+</div>
+
+<!-- Edit match modal -->
+<div id="edit-modal" class="edit-modal-overlay" style="display:none">
+  <div id="edit-sheet" class="edit-modal-sheet">
+    <div class="edit-modal-title">✏️ Upravit zápas</div>
+    <!-- Score -->
+    <div id="edit-score-section">
+      <div class="set-picker" style="margin-bottom:12px">
+        <div class="set-picker-header"><label>Výsledek setů</label></div>
+        <div class="set-picker-cols">
+          <div class="set-picker-col-label winner" id="edit-sp-winner">Vítěz</div>
+          <div class="set-vs-label" style="text-align:center;font-size:.72rem;color:var(--t3)">:</div>
+          <div class="set-picker-col-label" id="edit-sp-loser">Poražený</div>
+        </div>
+        <div id="edit-set-rows"></div>
+      </div>
+    </div>
+    <!-- Beer -->
+    <div id="edit-beer-section" style="margin-bottom:14px">
+      <div style="font-size:.78rem;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🍺 Kdo vyhrál poslední set?</div>
+      <div class="last-set-btns" id="edit-last-set-btns"></div>
+    </div>
+    <!-- Challenge -->
+    <div class="chal-mark-wrap" id="edit-chal-section" style="margin-bottom:14px">
+      <div class="chal-mark-label">⚡ Výzva — kdo splnil?</div>
+      <select id="edit-chal-select" style="background:var(--s2);color:var(--t);border:1px solid var(--t3);border-radius:8px;padding:7px 10px;width:100%;margin-bottom:8px;font-size:.83rem;font-family:inherit"></select>
+      <div class="chal-mark-players" id="edit-chal-players"></div>
+    </div>
+    <!-- Date / note -->
+    <div class="form-group" style="margin-bottom:12px"><label>Datum</label><input type="date" id="edit-date-input"></div>
+    <div class="form-group" style="margin-bottom:18px"><label>Poznámka</label><input type="text" id="edit-note-input" placeholder="volitelně..."></div>
+    <div style="display:flex;gap:10px;margin-bottom:0">
+      <button id="edit-save-btn" class="save-btn" style="flex:1;animation:none">✓ Uložit</button>
+      <button id="edit-del-btn" class="edit-del-btn">🗑 Smazat</button>
+    </div>
+    <button id="edit-cancel-btn" class="edit-cancel-btn">Zrušit</button>
+  </div>
 </div>
 
 <div id="v-new-match" class="view">
@@ -816,6 +933,27 @@ input:focus { border-color: var(--a); }
   <button class="settings-btn danger" id="logout-btn"><span class="s-icon">🚪</span> Odhlásit se</button>
 </div>
 
+<div id="v-vacation" class="view">
+  <div class="page-title">🏖️ Dovolená</div>
+  <div class="section-lbl">Celkové pořadí</div>
+  <div id="vac-leaderboard"></div>
+  <div class="section-lbl">Sporty</div>
+  <div id="vac-sport-list"></div>
+</div>
+
+</div>
+
+<div id="vac-overlay" class="vac-overlay">
+  <div class="vac-overlay-inner">
+    <div class="step-header" style="margin-bottom:16px;padding-bottom:18px;border-bottom:1px solid var(--t3)">
+      <button class="step-back" onclick="closeVacOverlay()">←</button>
+      <div>
+        <div class="step-title" id="vac-overlay-title"></div>
+        <div class="step-sub" id="vac-overlay-sub"></div>
+      </div>
+    </div>
+    <div id="vac-overlay-content"></div>
+  </div>
 </div>
 
 <nav>
@@ -823,6 +961,7 @@ input:focus { border-color: var(--a); }
   <button class="tab new-tab" data-view="new-match"><span class="tiw">＋</span><span class="tl" style="margin-top:2px;color:var(--t2)">Zápas</span></button>
   <button class="tab" data-view="stats"><span class="ti">📊</span><span class="tl">Statistiky</span></button>
   <button class="tab" data-view="settings"><span class="ti">⚙️</span><span class="tl">Nastavení</span></button>
+  <button class="tab" data-view="vacation"><span class="ti">🏖️</span><span class="tl">Dovol.</span></button>
 </nav>
 <div id="toast"></div>
 
@@ -869,6 +1008,8 @@ function saveM(m){localStorage.setItem('rp_matches',JSON.stringify(m));fsWrite('
 let players=loadP(), sports=loadS(), matches=loadM();
 const pName=id=>(players.find(p=>p.id===id)||{name:id}).name;
 const pColor=id=>PP[players.findIndex(p=>p.id===id)%PP.length]||PP[0];
+const activePlayers=()=>players.filter(p=>!p.archived);
+const isPavel=()=>players.find(p=>p.id===currentUser)?.name==='Pavel';
 const sById=id=>sports.find(s=>s.id===id)||{id,name:id,icon:'🏅',color:'#888'};
 
 // ─── ANIMATE HELPERS ─────────────────────────────────────────────────────────
@@ -919,24 +1060,34 @@ function computeElo(ml){
       }
     }
     else if(m.mode==='1v1round'){
+      // Per-set ELO: score stored as "p1_sets:p2_sets"
       (m.rounds||[]).forEach(r=>{
-        upd(r.p1,r.p2,r.winner==='1','overall');
-        upd(r.p1,r.p2,r.winner==='1',m.sport);
+        const [p1s,p2s]=r.score?r.score.split(':').map(Number):[0,0];
+        const tot=p1s+p2s;
+        if(tot>0){
+          for(let i=0;i<tot;i++){const p1w=i<p1s;upd(r.p1,r.p2,p1w,'overall');upd(r.p1,r.p2,p1w,m.sport);}
+        }else{upd(r.p1,r.p2,r.winner==='1','overall');upd(r.p1,r.p2,r.winner==='1',m.sport);}
       });
     }
     else if(m.mode==='2v2round'){
+      // Per-set ELO: score stored as "teamA_sets:teamB_sets"
       (m.rounds||[]).forEach(r=>{
         const [a1,a2]=(r.teamA||[]),[b1,b2]=(r.teamB||[]);
         if(!a1||!a2||!b1||!b2)return;
         [a1,a2,b1,b2].forEach(init);
+        const [sA,sB]=r.score?r.score.split(':').map(Number):[0,0];
+        const tot=sA+sB;
         ['overall',m.sport].forEach(key=>{
           [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
-          const tAw=r.winner==='A';
-          const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
-          const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
-          const da=Math.round(ELO_K*(sa-ea)),db=Math.round(ELO_K*((1-sa)-(1-ea)));
-          R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
-          R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
+          const iters=tot||1;
+          for(let i=0;i<iters;i++){
+            const tAw=tot>0?(i<sA):(r.winner==='A');
+            const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
+            const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
+            const da=Math.round(ELO_K*(sa-ea)),db=Math.round(ELO_K*((1-sa)-(1-ea)));
+            R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
+            R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
+          }
         });
       });
     }
@@ -960,31 +1111,48 @@ function computeElo(ml){
       });
     }
     else if(m.mode==='2v1round'){
+      // Per-set ELO: score stored as "solo_sets:team_sets"
       (m.rounds||[]).forEach(r=>{
         init(r.soloId);r.teamIds.forEach(init);
-        if(R[r.soloId].overall===undefined)R[r.soloId].overall=ELO_DEF;
-        r.teamIds.forEach(id=>{if(R[id].overall===undefined)R[id].overall=ELO_DEF;});
-        const rs=R[r.soloId].overall,rt=Math.round(((R[r.teamIds[0]].overall||ELO_DEF)+(R[r.teamIds[1]].overall||ELO_DEF))/2);
-        const sw=r.winner==='solo',ea=1/(1+Math.pow(10,(rt-rs)/400)),sa=sw?1:0;
-        const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*((1-sa)-(1-ea)));
-        R[r.soloId].overall+=ds;r.teamIds.forEach(id=>{R[id].overall+=dt;});
-        const rss=R[r.soloId][m.sport]||ELO_DEF,rts=Math.round(((R[r.teamIds[0]][m.sport]||ELO_DEF)+(R[r.teamIds[1]][m.sport]||ELO_DEF))/2);
-        const eas=1/(1+Math.pow(10,(rts-rss)/400)),ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*((1-sa)-(1-eas)));
-        R[r.soloId][m.sport]=(R[r.soloId][m.sport]||ELO_DEF)+ds2;
-        r.teamIds.forEach(id=>{R[id][m.sport]=(R[id][m.sport]||ELO_DEF)+dt2;});
+        const [solS,teamS]=r.score?r.score.split(':').map(Number):[0,0];
+        const tot=solS+teamS;
+        const iters=tot||1;
+        for(let i=0;i<iters;i++){
+          const sa=tot>0?(i<solS?1:0):(r.winner==='solo'?1:0);
+          if(R[r.soloId].overall===undefined)R[r.soloId].overall=ELO_DEF;
+          r.teamIds.forEach(id=>{if(R[id].overall===undefined)R[id].overall=ELO_DEF;});
+          const rs=R[r.soloId].overall,rt=Math.round(((R[r.teamIds[0]].overall||ELO_DEF)+(R[r.teamIds[1]].overall||ELO_DEF))/2);
+          const ea=1/(1+Math.pow(10,(rt-rs)/400));
+          const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*(ea-sa));
+          R[r.soloId].overall+=ds;r.teamIds.forEach(id=>{R[id].overall+=dt;});
+          const rss=R[r.soloId][m.sport]||ELO_DEF,rts=Math.round(((R[r.teamIds[0]][m.sport]||ELO_DEF)+(R[r.teamIds[1]][m.sport]||ELO_DEF))/2);
+          const eas=1/(1+Math.pow(10,(rts-rss)/400));
+          const ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*(eas-sa));
+          R[r.soloId][m.sport]=(R[r.soloId][m.sport]||ELO_DEF)+ds2;
+          r.teamIds.forEach(id=>{R[id][m.sport]=(R[id][m.sport]||ELO_DEF)+dt2;});
+        }
       });
     }
     else{
+      // Classic 2v1 — per-set ELO: score stored as "winner_sets:loser_sets"
       init(m.solo);init(m.teamA);init(m.teamB);
-      const rs=R[m.solo].overall||ELO_DEF,rt=Math.round(((R[m.teamA].overall||ELO_DEF)+(R[m.teamB].overall||ELO_DEF))/2);
-      const sw=m.winner==='solo',ea=1/(1+Math.pow(10,(rt-rs)/400)),sa=sw?1:0;
-      const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*((1-sa)-(1-ea)));
-      R[m.solo].overall+=ds;R[m.teamA].overall+=dt;R[m.teamB].overall+=dt;
-      const rss=R[m.solo][m.sport]||ELO_DEF,rts=Math.round(((R[m.teamA][m.sport]||ELO_DEF)+(R[m.teamB][m.sport]||ELO_DEF))/2);
-      const eas=1/(1+Math.pow(10,(rts-rss)/400)),ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*((1-sa)-(1-eas)));
-      R[m.solo][m.sport]=(R[m.solo][m.sport]||ELO_DEF)+ds2;
-      R[m.teamA][m.sport]=(R[m.teamA][m.sport]||ELO_DEF)+dt2;
-      R[m.teamB][m.sport]=(R[m.teamB][m.sport]||ELO_DEF)+dt2;
+      const [sw,sl]=m.score?m.score.split(':').map(Number):[0,0];
+      const tot=sw+sl;
+      const iters=tot||1;
+      for(let i=0;i<iters;i++){
+        const soloW=tot>0?(m.winner==='solo'?(i<sw):(i>=sw)):(m.winner==='solo');
+        const sa=soloW?1:0;
+        const rs=R[m.solo].overall||ELO_DEF,rt=Math.round(((R[m.teamA].overall||ELO_DEF)+(R[m.teamB].overall||ELO_DEF))/2);
+        const ea=1/(1+Math.pow(10,(rt-rs)/400));
+        const ds=Math.round(ELO_K*(sa-ea)),dt=Math.round(ELO_K/2*(ea-sa));
+        R[m.solo].overall+=ds;R[m.teamA].overall+=dt;R[m.teamB].overall+=dt;
+        const rss=R[m.solo][m.sport]||ELO_DEF,rts=Math.round(((R[m.teamA][m.sport]||ELO_DEF)+(R[m.teamB][m.sport]||ELO_DEF))/2);
+        const eas=1/(1+Math.pow(10,(rts-rss)/400));
+        const ds2=Math.round(ELO_K*(sa-eas)),dt2=Math.round(ELO_K/2*(eas-sa));
+        R[m.solo][m.sport]=(R[m.solo][m.sport]||ELO_DEF)+ds2;
+        R[m.teamA][m.sport]=(R[m.teamA][m.sport]||ELO_DEF)+dt2;
+        R[m.teamB][m.sport]=(R[m.teamB][m.sport]||ELO_DEF)+dt2;
+      }
     }
   });
   return R;
@@ -1013,6 +1181,7 @@ function showView(name){
   if(name==='new-match') initEntry();
   if(name==='stats')     renderStats();
   if(name==='settings')  renderSettings();
+  if(name==='vacation')  renderVacDashboard();
 }
 
 // ─── FILTER BARS ─────────────────────────────────────────────────────────────
@@ -1069,34 +1238,67 @@ function getSetScore(){
 // ─── DAILY CHALLENGE ─────────────────────────────────────────────────────────
 const CHALLENGES=[
   // Zápas — výsledek
-  {id:'c20',       icon:'💎', title:'Kanár',               desc:'Vyhraj zápas bez ztráty setu (2:0)'},
-  {id:'clast',     icon:'⚔️', title:'Třetí set rozhodl',   desc:'Vyhraj 2:1 — vše záviselo na posledním setu'},
-  {id:'beer',      icon:'🍺', title:'Pivní král',           desc:'Vyhraj zápas a zároveň vyhraj poslední set'},
-  {id:'moralwin',  icon:'🍻', title:'Morální vítěz',        desc:'Prohraj zápas, ale vyhraj poslední set'},
-  {id:'upset',     icon:'😈', title:'Šokující výsledek',    desc:'Poraz hráče s vyšším ELO'},
-  {id:'bigupset',  icon:'🤯', title:'Obří šok',             desc:'Poraz hráče o 50+ ELO bodů silnějšího'},
+  {id:'c20',       icon:'💎', title:'Kanár',               desc:'Vyhraj zápas a nedovol soupeři ani jediný set',                   forfeit:'Poražený udělá 10 dřepů na místě'},
+  {id:'clast',     icon:'⚔️', title:'Rozhodující set',     desc:'Vyhraj v posledním možném setu — soupeř prohrál jen o jeden set', forfeit:'Poražený se třikrát ukloní vítězi'},
+  {id:'beer',      icon:'🍺', title:'Pivní král',           desc:'Vyhraj zápas a zároveň vyhraj poslední set',                      forfeit:'Ostatní kupují pití vítězi'},
+  {id:'moralwin',  icon:'🍻', title:'Morální vítěz',        desc:'Prohraj zápas, ale vyhraj poslední set',                          forfeit:'Vítěz zápasu udělá 5 kliků jako trest osudu'},
+  {id:'upset',     icon:'😈', title:'Šokující výsledek',    desc:'Poraz hráče s vyšším ELO',                                        forfeit:'Poražený řekne nahlas: „Byl jsi lepší!"'},
+  {id:'bigupset',  icon:'🤯', title:'Obří šok',             desc:'Poraz hráče o 50+ ELO bodů silnějšího',                          forfeit:'Poražený nese tašku vítěze příště na kurt'},
   // Den
-  {id:'dayclean',  icon:'🛡️', title:'Neprohraj set',        desc:'Dnes nevzdej ani jeden set — každý zápas vyhraj čistě'},
-  {id:'first',     icon:'🌅', title:'První krev',           desc:'Vyhraj první zápas dne'},
-  {id:'double',    icon:'✌️', title:'Dvojitá výhra',        desc:'Vyhraj 2 zápasy v jeden den'},
-  {id:'flawless',  icon:'🌟', title:'Bezchybný den',        desc:'Vyhraj všechny dnešní zápasy (min. 2)'},
-  {id:'vs2',       icon:'🥊', title:'Dva soupeři',          desc:'Vyhraj dnes proti 2 různým hráčům'},
+  {id:'dayclean',  icon:'🛡️', title:'Neprohraj set',        desc:'Dnes nevzdej ani jeden set — každý zápas vyhraj čistě',          forfeit:'Všichni poražení udělají 8 dřepů'},
+  {id:'first',     icon:'🌅', title:'První krev',           desc:'Vyhraj první zápas dne',                                          forfeit:'Ostatní udělají 3 výskoky na uvítanou'},
+  {id:'double',    icon:'✌️', title:'Dvojitá výhra',        desc:'Vyhraj 2 zápasy v jeden den',                                     forfeit:'Ostatní udělají 8 dřepů'},
+  {id:'flawless',  icon:'🌟', title:'Bezchybný den',        desc:'Vyhraj všechny dnešní zápasy (min. 2)',                           forfeit:'Ostatní udělají 10 dřepů + 5 kliků'},
+  {id:'vs2',       icon:'🥊', title:'Dva soupeři',          desc:'Vyhraj dnes proti 2 různým hráčům',                               forfeit:'Oba poražení se ukloní a zatleskají'},
   // Rivalita
-  {id:'avenger',   icon:'💪', title:'Odplata',              desc:'Poraz hráče, který tě naposledy porazil'},
-  {id:'nemesis',   icon:'🎯', title:'Nemesis poražen',      desc:'Poraz hráče, proti kterému máš zápornou bilanci'},
-  {id:'sportrev',  icon:'🔁', title:'Sportovní čest',       desc:'Vyhraj ve sportu, kde jsi naposledy prohrál'},
-  {id:'firstwin',  icon:'🌱', title:'Konečně!',             desc:'Poraz hráče, kterého jsi dosud nikdy neporazil'},
-  {id:'cmb2',      icon:'🔥', title:'Zpět z mrtvých',       desc:'Vyhraj po 2 nebo více prohrách v řadě'},
+  {id:'avenger',   icon:'💪', title:'Odplata',              desc:'Poraz hráče, který tě naposledy porazil',                         forfeit:'Poražený zazpívá sloku libovolné písničky'},
+  {id:'nemesis',   icon:'🎯', title:'Nemesis poražen',      desc:'Poraz hráče, proti kterému máš zápornou bilanci',                 forfeit:'Poražený stojí 15 s na jedné noze'},
+  {id:'sportrev',  icon:'🔁', title:'Sportovní čest',       desc:'Vyhraj ve sportu, kde jsi naposledy prohrál',                     forfeit:'Poražený udělá 10 dřepů'},
+  {id:'firstwin',  icon:'🌱', title:'Konečně!',             desc:'Poraz hráče, kterého jsi dosud nikdy neporazil',                  forfeit:'Poražený potřese vítězi rukou 3× slavnostně'},
+  {id:'cmb2',      icon:'🔥', title:'Zpět z mrtvých',       desc:'Vyhraj po 2 nebo více prohrách v řadě',                          forfeit:'Ostatní udělají 10 výskoků'},
   // Herní výzvy (manuálně označit po zápase)
-  {id:'kanarek',   icon:'🐤', title:'Kanárek',              desc:'Vyhraj set aniž soupeř získá jediný balon (11:0)'},
-  {id:'comeback5', icon:'⚡', title:'Comeback z −5',        desc:'Otočil jsi set, když jsi prohrával o 5 nebo více balónů'},
-  {id:'firstball', icon:'🎯', title:'První balon',          desc:'Vyhraj první balon ve všech setech zápasu'},
-  {id:'service',   icon:'🏓', title:'Souboj o podání',      desc:'Vyhraj každý souboj o podání v zápase'},
+  {id:'kanarek',   icon:'🐤', title:'Kanárek',              desc:'Vyhraj set aniž soupeř získá jediný bod',                        forfeit:'Poražený zakokrhá jako kohout'},
+  {id:'comeback5', icon:'⚡', title:'Comeback z −5',        desc:'Otočil jsi set, když jsi prohrával o 5 nebo více balónů',        forfeit:'Poražený udělá 7 kliků'},
+  {id:'firstball', icon:'🎯', title:'První balon',          desc:'Vyhraj první balon ve všech setech zápasu',                       forfeit:'Ostatní udělají 5 kliků'},
+  {id:'service',   icon:'⚡', title:'Souboj o podání',      desc:'Vyhraj každý souboj o podání v zápase',                          forfeit:'Poražený udělá 3 výskoky'},
   // 2v1
-  {id:'solo',      icon:'🦅', title:'Sólo hrdina',          desc:'Vyhraj jako sólo hráč v handicap'},
-  {id:'team',      icon:'👥', title:'Síla týmu',            desc:'Vyhraj jako tým v handicap'},
+  {id:'solo',      icon:'🦅', title:'Sólo hrdina',          desc:'Vyhraj jako sólo hráč v handicap',                               forfeit:'Každý z týmu udělá 8 dřepů'},
+  {id:'team',      icon:'👥', title:'Síla týmu',            desc:'Vyhraj jako tým v handicap',                                     forfeit:'Sólo hráč udělá 15 dřepů'},
+  // Nové — auto
+  {id:'hat3',      icon:'🎩', title:'Hat-trick',            desc:'Vyhraj 3 zápasy v jeden den',                                    forfeit:'Ostatní udělají 5 kliků + 5 dřepů'},
+  {id:'streak5',   icon:'🌋', title:'Ohnivá šňůra',         desc:'Vyhraj 5 zápasů 1v1 v řadě',                                    forfeit:'Ostatní udělají 10 kliků'},
+  {id:'revenge3',  icon:'😤', title:'Pomsta za tři',        desc:'Poraz hráče, který tě porazil 3× za sebou',                     forfeit:'Poražený třikrát zopakuje: „Příště tě dostanu!"'},
+  {id:'topelo',    icon:'📈', title:'Osobní rekord',        desc:'Překonej své historicky nejvyšší ELO',                           forfeit:'Ostatní zatleskají vítězi 10×'},
+  {id:'sportsweep',icon:'🌍', title:'Vícebojař',            desc:'Vyhraj ve 2 různých sportech tentýž den',                        forfeit:'Ostatní udělají 8 dřepů'},
+  {id:'streak3',   icon:'🔗', title:'Trojitá šňůra',        desc:'Vyhraj 3 zápasy 1v1 v řadě',                                    forfeit:'Ostatní udělají 5 dřepů'},
+  // Nové — manuální
+  {id:'ace',       icon:'🚀', title:'Eso',                  desc:'Vyhraj přímý bod z podání — soupeř se míče nedotkl',            forfeit:'Poražený udělá 5 kliků'},
+  {id:'fiverow',   icon:'5️⃣', title:'Pět v řadě',          desc:'Vyhraj 5 bodů za sebou v jednom setu',                          forfeit:'Poražený udělá 8 dřepů'},
+  {id:'dropking',  icon:'💧', title:'Drop mistr',           desc:'Vyhraj bod přesným drop shotem u sítě',                          forfeit:'Poražený udělá 5 výskoků'},
+  {id:'rally15',   icon:'🏃', title:'Ultra rally',          desc:'Vyhraj bod po výměně delší než 15 úderů',                       forfeit:'Oba hráči si potřesou rukou a zatleskají'},
 ];
-function todayChallenge(){const day=Math.floor(Date.now()/86400000);return CHALLENGES[day%CHALLENGES.length];}
+
+// ─── CHALLENGE ROTATION ──────────────────────────────────────────────────────
+function getChalOffset(){
+  if(!currentUser)return 0;
+  const today=new Date().toISOString().slice(0,10);
+  const stored=JSON.parse(localStorage.getItem('rp_chal_rotate')||'{}');
+  if(stored.date!==today)return 0;
+  return stored.offsets?.[currentUser]||0;
+}
+function rotateTodayChallenge(){
+  if(!currentUser)return;
+  const today=new Date().toISOString().slice(0,10);
+  const stored=JSON.parse(localStorage.getItem('rp_chal_rotate')||'{}');
+  const offsets=stored.date===today?{...(stored.offsets||{})}:{};
+  offsets[currentUser]=(offsets[currentUser]||0)+1;
+  localStorage.setItem('rp_chal_rotate',JSON.stringify({date:today,offsets}));
+  renderChallengeCard();
+}
+function todayChallenge(){
+  const day=Math.floor(Date.now()/86400000);
+  return CHALLENGES[(day+getChalOffset())%CHALLENGES.length];
+}
 function winnerOf(m){
   if(m.mode==='1v1') return m.winner==='1'?m.player1:m.player2;
   if(m.mode==='2v1round'){
@@ -1133,27 +1335,122 @@ function evalChallenge(chal,m,all,R,pid){
   function lossStreakBefore(){let s=0;for(let i=histP.length-1;i>=0;i--){if(winnerOf(histP[i])!==pid)s++;else break;}return s;}
   switch(chal.id){
     case 'c20':       return didWin&&scL[1]==='0';
-    case 'clast':     return didWin&&sc==='2:1';
+    case 'clast':     {const [sw1,sl1]=[parseInt(scL[0])||0,parseInt(scL[1])||0];return didWin&&sw1>1&&sl1===sw1-1;}
     case 'beer':      return didWin&&m.lastSetWinner===pid;
     case 'moralwin':  return !didWin&&m.lastSetWinner===pid;
-    case 'upset':     return didWin&&m.mode==='1v1'&&(R[opp1v1(m,pid)]?.overall||1000)>ep;
-    case 'bigupset':  return didWin&&m.mode==='1v1'&&(R[opp1v1(m,pid)]?.overall||1000)-ep>=50;
+    case 'upset':     {
+      if(m.mode==='1v1') return didWin&&(R[opp1v1(m,pid)]?.overall||1000)>ep;
+      if(m.mode==='1v1round') return (m.rounds||[]).some(r=>{const w=(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2');const o=r.p1===pid?r.p2:r.p1;return w&&(R[o]?.overall||1000)>ep;});
+      return false;
+    }
+    case 'bigupset':  {
+      if(m.mode==='1v1') return didWin&&(R[opp1v1(m,pid)]?.overall||1000)-ep>=50;
+      if(m.mode==='1v1round') return (m.rounds||[]).some(r=>{const w=(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2');const o=r.p1===pid?r.p2:r.p1;return w&&(R[o]?.overall||1000)-ep>=50;});
+      return false;
+    }
     case 'dayclean':  return todP.length>0&&todP.every(x=>winnerOf(x)===pid&&x.score&&x.score.split(':')[1]==='0');
     case 'first':     {const sorted=[...todP].sort((a,b)=>a.id-b.id);return didWin&&sorted.length>0&&sorted[0].id===m.id;}
     case 'double':    return todW.length>=2;
     case 'flawless':  return todP.length>=2&&todP.every(x=>winnerOf(x)===pid);
-    case 'vs2':       {const beaten=new Set(todW.filter(x=>x.mode==='1v1').map(x=>opp1v1(x,pid)));return beaten.size>=2;}
-    case 'avenger':   {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);return!!histP.slice().reverse().find(x=>x.mode==='1v1'&&playedIn(x,o)&&winnerOf(x)===o);}
-    case 'nemesis':   {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);const ms=histP.filter(x=>x.mode==='1v1'&&playedIn(x,o));const wins=ms.filter(x=>winnerOf(x)===pid).length;return ms.length>=2&&wins<ms.length-wins;}
+    case 'vs2':       {
+      const beaten=new Set();
+      tod.forEach(x=>{
+        if(x.mode==='1v1'&&winnerOf(x)===pid) beaten.add(opp1v1(x,pid));
+        else if(x.mode==='1v1round')(x.rounds||[]).forEach(r=>{if((r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2'))beaten.add(r.p1===pid?r.p2:r.p1);});
+      });
+      return beaten.size>=2;
+    }
+    case 'avenger':   {
+      if(!(m.mode==='1v1'||m.mode==='1v1round')) return false;
+      const myWins=m.mode==='1v1'?(didWin?[opp1v1(m,pid)]:[]): (m.rounds||[]).filter(r=>(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2')).map(r=>r.p1===pid?r.p2:r.p1);
+      if(!myWins.length) return false;
+      return myWins.some(opp=>{
+        const prev=[...histP].filter(x=>{
+          if(x.mode==='1v1') return playedIn(x,opp);
+          if(x.mode==='1v1round') return (x.rounds||[]).some(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp));
+          return false;
+        }).reverse();
+        if(!prev.length) return false;
+        const last=prev[0];
+        if(last.mode==='1v1') return winnerOf(last)===opp;
+        if(last.mode==='1v1round'){const lr=(last.rounds||[]).filter(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp)).pop();return lr&&((lr.p1===opp&&lr.winner==='1')||(lr.p2===opp&&lr.winner==='2'));}
+        return false;
+      });
+    }
+    case 'nemesis':   {
+      if(!(m.mode==='1v1'||m.mode==='1v1round')) return false;
+      const myWins2=m.mode==='1v1'?(didWin?[opp1v1(m,pid)]:[]): (m.rounds||[]).filter(r=>(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2')).map(r=>r.p1===pid?r.p2:r.p1);
+      if(!myWins2.length) return false;
+      return myWins2.some(opp=>{
+        let wins=0,total=0;
+        histP.forEach(x=>{
+          if(x.mode==='1v1'&&playedIn(x,opp)){total++;if(winnerOf(x)===pid)wins++;}
+          else if(x.mode==='1v1round')(x.rounds||[]).filter(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp)).forEach(r=>{total++;if((r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2'))wins++;});
+        });
+        return total>=2&&wins<total-wins;
+      });
+    }
     case 'sportrev':  {if(!didWin)return false;const prev=histP.filter(x=>x.sport===m.sport);return prev.length>0&&winnerOf(prev[prev.length-1])!==pid;}
-    case 'firstwin':  {if(!didWin||m.mode!=='1v1')return false;const o=opp1v1(m,pid);const prev=histP.filter(x=>x.mode==='1v1'&&playedIn(x,o));return prev.length>0&&prev.every(x=>winnerOf(x)!==pid);}
+    case 'firstwin':  {
+      if(!(m.mode==='1v1'||m.mode==='1v1round')) return false;
+      const myWins3=m.mode==='1v1'?(didWin?[opp1v1(m,pid)]:[]): (m.rounds||[]).filter(r=>(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2')).map(r=>r.p1===pid?r.p2:r.p1);
+      if(!myWins3.length) return false;
+      return myWins3.some(opp=>{
+        const prev=histP.filter(x=>{
+          if(x.mode==='1v1') return playedIn(x,opp);
+          if(x.mode==='1v1round') return (x.rounds||[]).some(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp));
+          return false;
+        });
+        if(!prev.length) return false;
+        return prev.every(x=>{
+          if(x.mode==='1v1') return winnerOf(x)!==pid;
+          if(x.mode==='1v1round') return (x.rounds||[]).filter(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp)).every(r=>!((r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2')));
+          return true;
+        });
+      });
+    }
     case 'cmb2':      return didWin&&lossStreakBefore()>=2;
-    case 'kanarek':   return false; // manuální — win a set 11:0
-    case 'comeback5': return false; // manuální — win a set from -5
-    case 'firstball': return false; // manuální — win first point of every set
-    case 'service':   return false; // manuální — win every service battle
-    case 'solo':      return m.mode==='2v1'&&m.winner==='solo'&&m.solo===pid;
-    case 'team':      return m.mode==='2v1'&&m.winner==='team'&&(m.teamA===pid||m.teamB===pid);
+    case 'kanarek':   return false; // manuální
+    case 'comeback5': return false; // manuální
+    case 'firstball': return false; // manuální
+    case 'service':   return false; // manuální
+    case 'solo':      {
+      if(m.mode==='2v1') return m.winner==='solo'&&m.solo===pid;
+      if(m.mode==='2v1round') return (m.rounds||[]).some(r=>r.soloId===pid&&r.winner==='solo');
+      return false;
+    }
+    case 'team':      {
+      if(m.mode==='2v1') return m.winner==='team'&&(m.teamA===pid||m.teamB===pid);
+      if(m.mode==='2v1round') return (m.rounds||[]).some(r=>(r.teamIds||[]).includes(pid)&&r.winner==='team');
+      return false;
+    }
+    case 'hat3':      return todW.length>=3;
+    case 'streak5':   {let s=0;for(let i=histP.length-1;i>=0;i--){if(winnerOf(histP[i])===pid)s++;else break;}return didWin&&s+1>=5;}
+    case 'streak3':   {let s=0;for(let i=histP.length-1;i>=0;i--){if(winnerOf(histP[i])===pid)s++;else break;}return didWin&&s+1>=3;}
+    case 'revenge3':  {
+      if(!(m.mode==='1v1'||m.mode==='1v1round')) return false;
+      const myWins4=m.mode==='1v1'?(didWin?[opp1v1(m,pid)]:[]): (m.rounds||[]).filter(r=>(r.p1===pid&&r.winner==='1')||(r.p2===pid&&r.winner==='2')).map(r=>r.p1===pid?r.p2:r.p1);
+      if(!myWins4.length) return false;
+      return myWins4.some(opp=>{
+        const ms=histP.filter(x=>{
+          if(x.mode==='1v1') return playedIn(x,opp);
+          if(x.mode==='1v1round') return (x.rounds||[]).some(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp));
+          return false;
+        }).slice(-3);
+        if(ms.length<3) return false;
+        return ms.every(x=>{
+          if(x.mode==='1v1') return winnerOf(x)===opp;
+          if(x.mode==='1v1round'){const rs=(x.rounds||[]).filter(r=>(r.p1===pid||r.p2===pid)&&(r.p1===opp||r.p2===opp));return rs.length>0&&rs.every(r=>(r.p1===opp&&r.winner==='1')||(r.p2===opp&&r.winner==='2'));}
+          return false;
+        });
+      });
+    }
+    case 'topelo':    {if(!didWin)return false;const prevMax=Math.max(...[...all].filter(x=>x.id!==m.id&&playedIn(x,pid)).map((_,i,a)=>{const sub=a.slice(0,i+1);const rr=computeElo(sub);return rr[pid]?.overall||1000;}),999);return (R[pid]?.overall||1000)>prevMax;}
+    case 'sportsweep':{const todaySports=new Set(todW.map(x=>x.sport));return todaySports.size>=2;}
+    case 'ace':       return false; // manuální
+    case 'fiverow':   return false; // manuální
+    case 'dropking':  return false; // manuální
+    case 'rally15':   return false; // manuální
   }
   return false;
 }
@@ -1166,17 +1463,18 @@ function chalCompleted(pid){
 function celebrateChallenge(ch,playerName){
   const el=document.createElement('div');
   el.className='chal-overlay';
-  el.innerHTML=`<div class="co-icon">${ch.icon}</div><div class="co-label">🎉 Výzva splněna!</div><div class="co-title">${ch.title}</div><div class="co-player">${playerName}</div><div class="co-stars">⭐⭐⭐</div>`;
+  el.innerHTML=`<div class="co-icon">${ch.icon}</div><div class="co-label">🎉 Výzva splněna!</div><div class="co-title">${ch.title}</div><div class="co-player">${playerName}</div><div class="co-stars">⭐⭐⭐</div>${ch.forfeit?`<div class="co-forfeit">${ch.forfeit}</div>`:''}`;
   document.body.appendChild(el);
-  setTimeout(()=>{el.classList.add('hide');setTimeout(()=>el.remove(),700);},2800);
+  setTimeout(()=>{el.classList.add('hide');setTimeout(()=>el.remove(),700);},ch.forfeit?4200:2800);
 }
 function renderChallengeCard(){
   const el=document.getElementById('daily-challenge');
   if(!el)return;
   const ch=todayChallenge();
   const done=currentUser&&chalCompleted(currentUser);
+  const offset=getChalOffset();
   el.className='challenge-card'+(done?' done':'');
-  el.innerHTML=`<div class="ch-icon">${ch.icon}</div><div class="ch-body"><div class="ch-label">⚡ Výzva dne</div><div class="ch-name">${ch.title}</div><div class="ch-desc">${ch.desc}</div></div>${done?'<div class="ch-done-badge">✅</div>':''}`;
+  el.innerHTML=`<div class="ch-icon">${ch.icon}</div><div class="ch-body"><div class="ch-label">⚡ Výzva dne${offset>0?` <span style="font-size:.7rem;opacity:.6">(+${offset})</span>`:''}</div><div class="ch-name">${ch.title}</div><div class="ch-desc">${ch.desc}</div>${ch.forfeit?`<div class="ch-forfeit">🏆 Výhra: ${ch.forfeit}</div>`:''}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">${done?'<div class="ch-done-badge">✅</div>':''}<button class="ch-rotate-btn" title="Jiná výzva" onclick="rotateTodayChallenge()">🔄</button></div>`;
 }
 
 // ─── ENTRY ───────────────────────────────────────────────────────────────────
@@ -1239,7 +1537,7 @@ document.getElementById('back-mode').addEventListener('click',()=>goStep('sport'
 function buildMode(){
   const s=sById(E.sport);
   document.getElementById('mode-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color}]);
-  document.getElementById('btn-2v2').style.display=players.length>=4?'':'none';
+  document.getElementById('btn-2v2').style.display=activePlayers().length>=4?'':'none';
 }
 document.getElementById('btn-1v1').addEventListener('click',()=>{E.mode='1v1';goStep('1v1pick');});
 document.getElementById('btn-2v1').addEventListener('click',()=>{E.mode='2v1';goStep('2v1pick');});
@@ -1250,7 +1548,8 @@ function buildMatchup(){
   const s=sById(E.sport);
   document.getElementById('matchup-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'1v1'}]);
   const pairs=[];
-  for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) pairs.push([players[i],players[j]]);
+  const ap=activePlayers();
+  for(let i=0;i<ap.length;i++) for(let j=i+1;j<ap.length;j++) pairs.push([ap[i],ap[j]]);
   const el=document.getElementById('matchup-list');
   el.innerHTML=pairs.map(([a,b])=>`
     <button class="matchup-btn" data-a="${a.id}" data-b="${b.id}">
@@ -1288,16 +1587,16 @@ function build1v1Pick(){
     const ready=picked.size===need;
     document.getElementById('1v1pick-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:rotation?'1v1 rotace':'1v1'}]);
     document.getElementById('1v1pick-list').innerHTML=`
-      ${players.length>=3?`<div style="display:flex;gap:8px;margin-bottom:16px">
+      ${activePlayers().length>=3?`<div style="display:flex;gap:8px;margin-bottom:16px">
         <button class="round-wtn${!rotation?' sel-solo':''}" id="pp1-classic" style="flex:1">Klasické</button>
         <button class="round-wtn${rotation?' sel-solo':''}" id="pp1-rotation" style="flex:1">Rotační</button>
       </div>`:''}
       <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber ${need} hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-        ${players.map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp1-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
+        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp1-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
       </div>
       <button class="save-btn" id="1v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/${need}) →</button>`;
-    if(players.length>=3){
+    if(activePlayers().length>=3){
       document.getElementById('pp1-classic').addEventListener('click',()=>{rotation=false;picked=new Set();render();});
       document.getElementById('pp1-rotation').addEventListener('click',()=>{rotation=true;picked=new Set();render();});
     }
@@ -1328,7 +1627,7 @@ function build1v1Pick(){
 document.getElementById('back-1v1round').addEventListener('click',()=>goStep('1v1pick'));
 function build1v1Round(){
   const s=sById(E.sport);
-  const ps=E.pickedPlayers&&E.pickedPlayers.length===3?E.pickedPlayers:players.slice(0,3);
+  const ps=E.pickedPlayers&&E.pickedPlayers.length===3?E.pickedPlayers:activePlayers().slice(0,3);
   document.getElementById('1v1round-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'1v1 rotace'}]);
   document.getElementById('1v1round-date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('1v1round-note-input').value='';
@@ -1448,7 +1747,7 @@ function build2v1Pick(){
       </div>
       <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber 3 hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-        ${players.map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp2-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
+        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp2-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
       </div>
       <button class="save-btn" id="2v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/3) →</button>`;
     document.getElementById('pp2-classic').addEventListener('click',()=>{rotation=false;render();});
@@ -1474,7 +1773,7 @@ function build2v1Pick(){
 document.getElementById('back-2v1round').addEventListener('click',()=>goStep('2v1pick'));
 function build2v1Round(){
   const s=sById(E.sport);
-  const ps=E.pickedPlayers&&E.pickedPlayers.length===3?E.pickedPlayers:players;
+  const ps=E.pickedPlayers&&E.pickedPlayers.length===3?E.pickedPlayers:activePlayers().slice(0,3);
   document.getElementById('round-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:'2v1 kolo'}]);
   document.getElementById('round-date-input').value=new Date().toISOString().slice(0,10);
   document.getElementById('round-note-input').value='';
@@ -1569,7 +1868,7 @@ function build2v2(){
   let rotation=false;
   let tA=[],tB=[];
   function render(){
-    const pool=players.filter(p=>!tA.includes(p.id)&&!tB.includes(p.id));
+    const pool=activePlayers().filter(p=>!tA.includes(p.id)&&!tB.includes(p.id));
     const ready=tA.length===2&&tB.length===2;
     document.getElementById('2v2-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',{t:rotation?'2v2 rotace':'2v2 čtyřhra'}]);
     const teamBox=(label,color,ids)=>`
@@ -1742,21 +2041,44 @@ document.getElementById('save-btn').addEventListener('click',()=>{
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 let dashFilter='all';
+let dashTimeFilter='all';
+function buildTimeFilterBar(id,active,cb){
+  const el=document.getElementById(id);if(!el)return;
+  const items=[{v:'all',l:'Celkově'},{v:'year',l:'Poslední rok'},{v:'month',l:'Poslední měsíc'}];
+  el.innerHTML=items.map(i=>`<button class="filter-btn ${active===i.v?'active':''}" data-f="${i.v}">${i.l}</button>`).join('');
+  el.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',()=>{
+    el.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');cb(b.dataset.f);
+  }));
+}
+function applyTimeFilter(arr){
+  if(dashTimeFilter==='all')return arr;
+  const now=new Date();
+  const cutoff=new Date(now);
+  if(dashTimeFilter==='month')cutoff.setMonth(now.getMonth()-1);
+  else if(dashTimeFilter==='year')cutoff.setFullYear(now.getFullYear()-1);
+  return arr.filter(m=>m.date&&new Date(m.date)>=cutoff);
+}
 function renderDashboard(){
   renderChallengeCard();
-  buildFilterBar('dash-filter',dashFilter,f=>{dashFilter=f;renderMatchList();});
+  buildTimeFilterBar('dash-time-filter',dashTimeFilter,f=>{dashTimeFilter=f;renderDashboard();});
+  const fm=applyTimeFilter(matches);
   const el=document.getElementById('dash-stats');
-  el.innerHTML=`<div class="stat-card" style="grid-column:span 2">
+  el.innerHTML=`<div class="stat-card ${dashFilter==='all'?'stat-card-active':''}" style="grid-column:span 2;cursor:pointer" data-sf="all">
     <div class="big" id="total-count">0</div><div class="lbl">Celkem zápasů</div></div>`
-    +sports.map(s=>`<div class="stat-card">
-      <div class="big" style="font-size:1.4rem">${matches.filter(m=>m.sport===s.id).length}</div>
+    +sports.map(s=>`<div class="stat-card ${dashFilter===s.id?'stat-card-active':''}" style="cursor:pointer" data-sf="${s.id}">
+      <div class="big" style="font-size:1.4rem">${fm.filter(m=>m.sport===s.id).length}</div>
       <div class="lbl">${s.icon} ${s.name}</div></div>`).join('');
+  el.querySelectorAll('.stat-card[data-sf]').forEach(c=>c.addEventListener('click',()=>{
+    dashFilter=c.dataset.sf;renderDashboard();
+  }));
   animateChildren(el,'anim-up',50);
-  countUp(document.getElementById('total-count'), matches.length, 600);
+  countUp(document.getElementById('total-count'), fm.length, 600);
   renderMatchList();
 }
 function renderMatchList(){
-  const sorted=[...(dashFilter==='all'?matches:matches.filter(m=>m.sport===dashFilter))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const base=dashFilter==='all'?matches:matches.filter(m=>m.sport===dashFilter);
+  const sorted=[...applyTimeFilter(base)].sort((a,b)=>new Date(b.date)-new Date(a.date));
   const el=document.getElementById('match-list');
   if(!sorted.length){el.innerHTML=`<div class="empty"><div class="icon">🏸</div><p>Žádné zápasy. Přidej první přes +!</p></div>`;return;}
   el.innerHTML=sorted.map(m=>{
@@ -1812,20 +2134,143 @@ function renderMatchList(){
         </div>
       </div>
       ${m.mode==='2v1round'?`<div class="score">${roundScore}</div>`:m.score?`<div class="score">${m.score}</div>`:''}
-      <button class="del-btn" data-id="${m.id}">✕</button>
+      <button class="edit-btn" data-id="${m.id}">✏️</button>
     </div>`;
   }).join('');
   animateChildren(el,'anim-up',40);
-  el.querySelectorAll('.del-btn').forEach(b=>{
-    b.addEventListener('click',()=>{
-      if(!confirm('Smazat zápas?'))return;
-      const card=b.closest('.match-card');
-      card.style.transition='opacity .2s,transform .2s';
-      card.style.opacity='0';card.style.transform='scale(.95)';
-      setTimeout(()=>{matches=matches.filter(m=>m.id!==b.dataset.id);saveM(matches);renderDashboard();toast('Smazáno');},200);
-    });
+  el.querySelectorAll('.edit-btn').forEach(b=>{
+    b.addEventListener('click',()=>openEditModal(b.dataset.id));
   });
 }
+
+let editSc={w:0,l:0};
+let editLastSet=null;
+let editChalMarked=new Set();
+
+function renderEditSetRows(){
+  document.getElementById('edit-set-rows').innerHTML=`
+    <div class="set-row">
+      <div class="set-score-cell">
+        <button class="sc-btn" onclick="adjEditSet('w',-1)">−</button>
+        <span class="sc-val">${editSc.w}</span>
+        <button class="sc-btn" onclick="adjEditSet('w',1)">+</button>
+      </div>
+      <div class="set-vs-sep">:</div>
+      <div class="set-score-cell">
+        <button class="sc-btn" onclick="adjEditSet('l',-1)">−</button>
+        <span class="sc-val">${editSc.l}</span>
+        <button class="sc-btn" onclick="adjEditSet('l',1)">+</button>
+      </div>
+    </div>`;
+}
+function adjEditSet(side,d){editSc[side]=Math.max(0,editSc[side]+d);renderEditSetRows();}
+
+function openEditModal(id){
+  const m=matches.find(x=>x.id===id);if(!m)return;
+  const modal=document.getElementById('edit-modal');
+  const sheet=document.getElementById('edit-sheet');
+  modal.dataset.matchId=id;
+
+  // Score section — only for non-round modes
+  const isRound=m.mode.includes('round');
+  document.getElementById('edit-score-section').style.display=isRound?'none':'block';
+  if(!isRound){
+    const [sw,sl]=m.score?m.score.split(':').map(Number):[0,0];
+    editSc={w:sw||0,l:sl||0};
+    // labels
+    let wn='Vítěz',ln='Poražený';
+    if(m.mode==='1v1'){wn=m.winner==='1'?pName(m.player1):pName(m.player2);ln=m.winner==='1'?pName(m.player2):pName(m.player1);}
+    else if(m.mode==='2v2'){const nA=m.teamA.map(pName).join('+'),nB=m.teamB.map(pName).join('+');wn=m.winner==='A'?nA:nB;ln=m.winner==='A'?nB:nA;}
+    else{wn=m.winner==='solo'?pName(m.solo):(pName(m.teamA)+'+'+pName(m.teamB));ln=m.winner==='solo'?(pName(m.teamA)+'+'+pName(m.teamB)):pName(m.solo);}
+    document.getElementById('edit-sp-winner').textContent=wn;
+    document.getElementById('edit-sp-loser').textContent=ln;
+    renderEditSetRows();
+  }
+
+  // Beer section — 1v1 and 2v1 only
+  const showBeer=m.mode==='1v1'||m.mode==='2v1';
+  document.getElementById('edit-beer-section').style.display=showBeer?'block':'none';
+  if(showBeer){
+    editLastSet=m.lastSetWinner||null;
+    let lsOpts=m.mode==='1v1'?[{id:m.player1,label:pName(m.player1)},{id:m.player2,label:pName(m.player2)}]
+      :[{id:m.solo,label:pName(m.solo)},{id:'team',label:pName(m.teamA)+'+'+pName(m.teamB)}];
+    const lsEl=document.getElementById('edit-last-set-btns');
+    lsEl.innerHTML=lsOpts.map(o=>`<button class="last-set-btn ${editLastSet===o.id?'active':''}" data-id="${o.id}">${o.label}</button>`).join('');
+    lsEl.querySelectorAll('.last-set-btn').forEach(b=>b.addEventListener('click',()=>{
+      editLastSet=editLastSet===b.dataset.id?null:b.dataset.id;
+      lsEl.querySelectorAll('.last-set-btn').forEach(x=>x.classList.toggle('active',x===b&&editLastSet!==null));
+    }));
+  }
+
+  // Challenge section
+  editChalMarked=new Set((m.chalDone||[]).map(c=>c.pid));
+  const sel=document.getElementById('edit-chal-select');
+  const existingCid=m.chalDone&&m.chalDone.length?m.chalDone[0].cid:todayChallenge().id;
+  sel.innerHTML=CHALLENGES.map(c=>`<option value="${c.id}" ${c.id===existingCid?'selected':''}>${c.icon} ${c.title}</option>`).join('');
+  const matchPids=m.mode==='1v1'?[m.player1,m.player2]:m.mode==='2v2'?[...m.teamA,...m.teamB]
+    :m.mode==='2v1'?[m.solo,m.teamA,m.teamB].filter(Boolean)
+    :m.mode==='1v1round'?[...new Set((m.rounds||[]).flatMap(r=>[r.p1,r.p2]))]
+    :m.mode==='2v2round'?[...new Set((m.rounds||[]).flatMap(r=>[...(r.teamA||[]),...(r.teamB||[])]))]
+    :m.mode==='2v1round'?[...new Set((m.rounds||[]).flatMap(r=>[r.soloId,...(r.teamIds||[])]))]
+    :[m.player1,m.player2].filter(Boolean);
+  const cpEl=document.getElementById('edit-chal-players');
+  cpEl.innerHTML='';
+  matchPids.forEach(pid=>{
+    const btn=document.createElement('button');
+    btn.className='chal-mark-btn'+(editChalMarked.has(pid)?' on':'');
+    btn.textContent=pName(pid);
+    if(editChalMarked.has(pid)){btn.style.borderColor=pColor(pid);btn.style.color=pColor(pid);}
+    btn.addEventListener('click',()=>{
+      if(editChalMarked.has(pid)){editChalMarked.delete(pid);btn.classList.remove('on');btn.style.borderColor='';btn.style.color='';}
+      else{editChalMarked.add(pid);btn.classList.add('on');btn.style.borderColor=pColor(pid);btn.style.color=pColor(pid);}
+    });
+    cpEl.appendChild(btn);
+  });
+
+  document.getElementById('edit-date-input').value=m.date||'';
+  document.getElementById('edit-note-input').value=m.note||'';
+  modal.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>sheet.classList.add('open')));
+}
+function closeEditModal(){
+  const modal=document.getElementById('edit-modal');
+  const sheet=document.getElementById('edit-sheet');
+  sheet.classList.remove('open');
+  setTimeout(()=>{modal.style.display='none';},260);
+}
+document.getElementById('edit-cancel-btn').addEventListener('click',closeEditModal);
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEditModal();});
+document.getElementById('edit-save-btn').addEventListener('click',()=>{
+  const id=document.getElementById('edit-modal').dataset.matchId;
+  const m=matches.find(x=>x.id===id);if(!m)return;
+  // score
+  if(!m.mode.includes('round')){
+    if(editSc.w>0||editSc.l>0){
+      if(editSc.l>=editSc.w){toast('⚠️ Vítěz musí mít více setů');return;}
+      m.score=`${editSc.w}:${editSc.l}`;
+    }
+  }
+  // beer
+  if(m.mode==='1v1'||m.mode==='2v1') m.lastSetWinner=editLastSet||null;
+  // challenge
+  const selCid=document.getElementById('edit-chal-select').value;
+  const ch=CHALLENGES.find(c=>c.id===selCid)||todayChallenge();
+  if(editChalMarked.size>0){
+    m.chalDone=[...editChalMarked].map(pid=>({pid,cid:ch.id,icon:ch.icon,title:ch.title}));
+  } else {
+    m.chalDone=[];
+  }
+  // date / note
+  m.date=document.getElementById('edit-date-input').value;
+  m.note=document.getElementById('edit-note-input').value.trim();
+  saveM(matches);closeEditModal();renderDashboard();toast('✅ Uloženo');
+});
+document.getElementById('edit-del-btn').addEventListener('click',()=>{
+  const id=document.getElementById('edit-modal').dataset.matchId;
+  if(!confirm('Smazat zápas?'))return;
+  closeEditModal();
+  setTimeout(()=>{matches=matches.filter(m=>m.id!==id);saveM(matches);renderDashboard();toast('Smazáno');},270);
+});
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
 let statsFilter='all';
@@ -1841,7 +2286,7 @@ function renderStats(){
   const R=computeElo(fm);
 
   // ELO
-  const sp=[...players].sort((a,b)=>(R[b.id]?.overall||ELO_DEF)-(R[a.id]?.overall||ELO_DEF));
+  const sp=[...activePlayers()].sort((a,b)=>(R[b.id]?.overall||ELO_DEF)-(R[a.id]?.overall||ELO_DEF));
   const eloEl=document.getElementById('elo-list');
   eloEl.innerHTML=sp.length?sp.map((p,i)=>{
     const ro=R[p.id]?.overall||ELO_DEF;
@@ -1913,7 +2358,7 @@ function renderStats(){
 
   // Per-player
   const psEl=document.getElementById('player-stats');
-  psEl.innerHTML=players.map((p,i)=>{
+  psEl.innerHTML=activePlayers().map((p,i)=>{
     const rows=sports.map(s=>{
       const sm=ovo.filter(m=>m.sport===s.id&&(m.player1===p.id||m.player2===p.id));
       if(!sm.length)return null;
@@ -1923,7 +2368,7 @@ function renderStats(){
     const tot=ovo.filter(m=>m.player1===p.id||m.player2===p.id).length;
     const win=ovo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
     const wr=tot?Math.round(win/tot*100):0;
-    const col=PP[i%PP.length];
+    const col=pColor(p.id);
     // forma: posledních 5 zápasů (1v1)
     const formMs=[...ovo].filter(m=>m.player1===p.id||m.player2===p.id).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     const formRow=formMs.length>=2?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -1953,10 +2398,11 @@ function renderStats(){
   const h2hEl=document.getElementById('h2h-table');
   if(!ovo.length){h2hEl.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné 1v1.</p></div>`;}
   else{
-    let html=`<table class="h2h-table"><thead><tr><th>↓ vs →</th>${players.map(p=>`<th>${p.name}</th>`).join('')}</tr></thead><tbody>`;
-    players.forEach((p,i)=>{
-      html+=`<tr><td><strong style="color:${PP[i%PP.length]}">${p.name}</strong></td>`;
-      players.forEach(o=>{
+    const ap=activePlayers();
+    let html=`<table class="h2h-table"><thead><tr><th>↓ vs →</th>${ap.map(p=>`<th>${p.name}</th>`).join('')}</tr></thead><tbody>`;
+    ap.forEach((p)=>{
+      html+=`<tr><td><strong style="color:${pColor(p.id)}">${p.name}</strong></td>`;
+      ap.forEach(o=>{
         if(p.id===o.id){html+=`<td class="self">—</td>`;return;}
         const ms=ovo.filter(m=>(m.player1===p.id&&m.player2===o.id)||(m.player1===o.id&&m.player2===p.id));
         const w=ms.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
@@ -1972,10 +2418,10 @@ function renderStats(){
   const hEl=document.getElementById('handicap-stats');
   if(!tvo.length){hEl.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné 2v1.</p></div>`;}
   else{
-    hEl.innerHTML=players.map((p,i)=>{
+    hEl.innerHTML=activePlayers().map((p)=>{
       const as=tvo.filter(m=>m.solo===p.id),at=tvo.filter(m=>m.teamA===p.id||m.teamB===p.id);
       if(!as.length&&!at.length)return'';
-      const col=PP[i%PP.length],sw=as.filter(m=>m.winner==='solo').length,tw=at.filter(m=>m.winner==='team').length;
+      const col=pColor(p.id),sw=as.filter(m=>m.winner==='solo').length,tw=at.filter(m=>m.winner==='team').length;
       return`<div class="player-stat-card" style="--pc:${col}">
         <div class="pname" style="color:${col}">${p.name}</div>
         ${as.length?`<div class="sport-row"><span>Sólo (s výhodou)</span><span><span class="w">${sw}V</span> / <span class="l">${as.length-sw}P</span></span></div>`:''}
@@ -1989,7 +2435,7 @@ function renderStats(){
   const dvoR=fm.filter(m=>m.mode==='2v2round');
   if(!dvo.length&&!dvoR.length){dblEl.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné čtyřhry.</p></div>`;}
   else{
-    dblEl.innerHTML=players.map((p,i)=>{
+    dblEl.innerHTML=activePlayers().map((p,i)=>{
       // classic 2v2 matches
       const gamesA=dvo.filter(m=>(m.teamA||[]).includes(p.id));
       const gamesB=dvo.filter(m=>(m.teamB||[]).includes(p.id));
@@ -2000,7 +2446,7 @@ function renderStats(){
       const rndWins=rndSets.filter(r=>((r.teamA||[]).includes(p.id)&&r.winner==='A')||((r.teamB||[]).includes(p.id)&&r.winner==='B')).length;
       const totW=classicWins+rndWins,totG=classicAll.length+rndSets.length;
       if(!totG)return'';
-      const col=PP[i%PP.length];
+      const col=pColor(p.id);
       return`<div class="player-stat-card" style="--pc:${col}">
         <div class="pname" style="color:${col}">${p.name}</div>
         ${classicAll.length?`<div class="sport-row"><span>Klasické</span><span><span class="w">${classicWins}V</span> / <span class="l">${classicAll.length-classicWins}P</span></span></div>`:''}
@@ -2019,7 +2465,7 @@ function renderCuriosities(fm,ovo,tvo,R){
   if(!fm.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Přidej zápasy.</p></div>`;return;}
   const cards=[];
 
-  players.forEach(p=>{
+  activePlayers().forEach(p=>{
     const pm=[...fm].filter(m=>m.mode==='1v1'&&(m.player1===p.id||m.player2===p.id)).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     if(pm.length<2)return;
     const dots=pm.map(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');return`<div class="fd ${w?'w':'l'}"></div>`;}).join('');
@@ -2028,7 +2474,7 @@ function renderCuriosities(fm,ovo,tvo,R){
   });
 
   let bS={name:'',streak:0};
-  players.forEach(p=>{
+  activePlayers().forEach(p=>{
     const pm=[...fm].filter(m=>m.mode==='1v1'&&(m.player1===p.id||m.player2===p.id)).sort((a,b)=>new Date(a.date)-new Date(b.date));
     let cur=0,max=0;pm.forEach(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');cur=w?cur+1:0;max=Math.max(max,cur);});
     if(max>bS.streak)bS={name:p.name,streak:max};
@@ -2036,7 +2482,7 @@ function renderCuriosities(fm,ovo,tvo,R){
   if(bS.streak>=2)cards.push({icon:'🏆',title:'Nejdelší série',value:`${bS.name}: ${bS.streak}× v řadě`,prio:10});
 
   let cB={name:'',streak:0};
-  players.forEach(p=>{
+  activePlayers().forEach(p=>{
     const pm=[...ovo].filter(m=>m.player1===p.id||m.player2===p.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
     let s=0;for(const m of pm){const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');if(w)s++;else break;}
     if(s>cB.streak)cB={name:p.name,streak:s};
@@ -2044,9 +2490,10 @@ function renderCuriosities(fm,ovo,tvo,R){
   if(cB.streak>=2)cards.push({icon:'⚡',title:'Aktuální šňůra',value:`${cB.name} vyhrál posledních ${cB.streak}×`,prio:9});
 
   let bN={w:0};
-  for(let i=0;i<players.length;i++) for(let j=0;j<players.length;j++){
+  const apC=activePlayers();
+  for(let i=0;i<apC.length;i++) for(let j=0;j<apC.length;j++){
     if(i===j)continue;
-    const a=players[i],b=players[j];
+    const a=apC[i],b=apC[j];
     const ms=ovo.filter(m=>(m.player1===a.id&&m.player2===b.id)||(m.player1===b.id&&m.player2===a.id));
     const w=ms.filter(m=>(m.player1===a.id&&m.winner==='1')||(m.player2===a.id&&m.winner==='2')).length;
     if(w>bN.w&&ms.length>=2)bN={w,total:ms.length,winner:a.name,loser:b.name};
@@ -2070,7 +2517,7 @@ function renderCuriosities(fm,ovo,tvo,R){
     const best=Object.entries(days).sort((a,b)=>b[1]-a[1])[0];
     if(best&&best[1]>=2){const d=new Date(best[0]).toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'long'});cards.push({icon:'📅',title:'Nejaktivnější den',value:`${best[1]} zápasů`,sub:d,prio:4});}
   }
-  players.forEach(p=>{
+  activePlayers().forEach(p=>{
     const as=tvo.filter(m=>m.solo===p.id);
     if(as.length>=2){const sw=as.filter(m=>m.winner==='solo').length,wr=Math.round(sw/as.length*100);if(wr>=60)cards.push({icon:'💪',title:'Sólo specialista',value:`${p.name}: ${wr}% výher`,sub:`${sw}/${as.length} sólo zápasů`,prio:6});}
   });
@@ -2092,9 +2539,9 @@ function renderCuriosities(fm,ovo,tvo,R){
 
   // Challenge completions per player (from match data)
   const chalCount={};
-  fm.filter(m=>m.chalDone).forEach(m=>{const pid=m.chalDone.pid;chalCount[pid]=(chalCount[pid]||0)+1;});
+  fm.filter(m=>m.chalDone&&m.chalDone.length).forEach(m=>{m.chalDone.forEach(c=>{chalCount[c.pid]=(chalCount[c.pid]||0)+1;});});
   const topChal=Object.entries(chalCount).sort((a,b)=>b[1]-a[1])[0];
-  if(topChal&&topChal[1]>=2)cards.push({icon:'⚡',title:'Výzvář',value:`${pName(topChal[0])}: ${topChal[1]}× výzva splněna`,sub:`ze ${CHALLENGES.length} různých výzev`,prio:9.5});
+  if(topChal&&topChal[1]>=1)cards.push({icon:'⚡',title:'Výzvář',value:`${pName(topChal[0])}: ${topChal[1]}× výzva splněna`,sub:`ze ${CHALLENGES.length} různých výzev`,prio:9.5});
 
   if(!cards.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Přidej více zápasů.</p></div>`;return;}
   cards.sort((a,b)=>b.prio-a.prio);
@@ -2105,35 +2552,59 @@ function renderCuriosities(fm,ovo,tvo,R){
 function renderChalStats(fm){
   const el=document.getElementById('chal-stats');
   if(!el)return;
-  const done=fm.filter(m=>m.chalDone);
+  const done=fm.filter(m=>m.chalDone&&m.chalDone.length);
   if(!done.length){el.innerHTML=`<div class="empty" style="padding:16px"><p>Žádné splněné výzvy.</p></div>`;return;}
-  // per player counts
+  // expand: per player list of {m, chal}
   const byP={};
-  done.forEach(m=>{const pid=m.chalDone.pid;if(!byP[pid])byP[pid]=[];byP[pid].push(m);});
+  done.forEach(m=>{(m.chalDone||[]).forEach(c=>{if(!byP[c.pid])byP[c.pid]=[];byP[c.pid].push({m,chal:c});});});
   const sorted=Object.entries(byP).sort((a,b)=>b[1].length-a[1].length);
-  const cards=sorted.map(([pid,ms])=>{
+  // ranking header
+  const rankHtml=`<div style="background:var(--s2);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);font-weight:700;margin-bottom:8px">Žebříček výzev</div>
+    ${sorted.map(([pid,entries],i)=>{
+      const medals=['🥇','🥈','🥉'];
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;${i<sorted.length-1?'border-bottom:1px solid var(--t3)':''}">
+        <span style="font-size:.95rem">${medals[i]||`${i+1}.`}</span>
+        <span style="font-weight:700;color:${pColor(pid)}">${pName(pid)}</span>
+        <span style="margin-left:auto;font-size:.82rem;color:var(--t2)">${entries.length}× splněno</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+  const cards=sorted.map(([pid,entries])=>{
     const col=pColor(pid);
-    const icons=ms.map(m=>m.chalDone.icon).join(' ');
-    const recent=ms.slice(-5).reverse().map(m=>`<div class="chal-history-item"><span style="font-size:1.1rem">${m.chalDone.icon}</span><div><div style="font-weight:600;font-size:.83rem">${m.chalDone.title}</div><div style="font-size:.72rem;color:var(--t2)">${m.date?new Date(m.date).toLocaleDateString('cs-CZ'):''}</div></div></div>`).join('');
+    const icons=[...new Set(entries.map(e=>e.chal.icon))].join(' ');
+    const recent=entries.slice(-5).reverse().map(({m,chal})=>`<div class="chal-history-item"><span style="font-size:1.1rem">${chal.icon}</span><div><div style="font-weight:600;font-size:.83rem">${chal.title}</div><div style="font-size:.72rem;color:var(--t2)">${m.date?new Date(m.date).toLocaleDateString('cs-CZ'):''}</div></div></div>`).join('');
     return `<div class="chal-stats-card">
-      <div class="chal-stats-name" style="color:${col}">${pName(pid)} <span style="font-size:.8rem;color:var(--t2);font-weight:400">${ms.length}× splněno</span></div>
-      <div style="font-size:1.2rem;letter-spacing:2px">${icons}</div>
+      <div class="chal-stats-name" style="color:${col}">${pName(pid)} <span style="font-size:.8rem;color:var(--t2);font-weight:400">${entries.length}× splněno</span></div>
+      <div style="font-size:1.2rem;letter-spacing:2px;margin-bottom:6px">${icons}</div>
       <div class="chal-history">${recent}</div>
     </div>`;
   }).join('');
-  el.innerHTML=cards;
+  el.innerHTML=rankHtml+cards;
   animateChildren(el,'anim-up',60);
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
 function renderSettings(){
   const pel=document.getElementById('player-list');
-  pel.innerHTML=players.map((p,i)=>`
+  const isAdm=isPavel();
+  pel.innerHTML=activePlayers().map((p,i)=>`
     <div class="player-row">
-      <div class="color-dot" style="background:${PP[i%PP.length]}"></div>
+      <div class="color-dot" style="background:${pColor(p.id)}"></div>
       <input type="text" data-id="${p.id}" value="${p.name}" placeholder="Jméno hráče">
-      <button class="rem-btn" data-id="${p.id}">✕</button>
+      ${isAdm?`<button class="rem-btn" data-id="${p.id}" title="Archivovat hráče">📦</button>`:''}
     </div>`).join('');
+  // archived section (Pavel only)
+  const archived=players.filter(p=>p.archived);
+  if(isAdm&&archived.length){
+    pel.innerHTML+=`<div style="font-size:.72rem;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin:14px 0 6px">Archivovaní</div>`
+      +archived.map(p=>`
+        <div class="player-row" style="opacity:.5">
+          <div class="color-dot" style="background:${pColor(p.id)}"></div>
+          <span style="flex:1;font-size:.95rem;color:var(--t2)">${p.name}</span>
+          <button class="restore-btn" data-id="${p.id}" title="Obnovit hráče">↩️</button>
+        </div>`).join('');
+  }
   pel.querySelectorAll('input[data-id]').forEach(inp=>{
     inp.addEventListener('blur',()=>{
       const p=players.find(x=>x.id===inp.dataset.id);
@@ -2141,9 +2612,14 @@ function renderSettings(){
     });
   });
   pel.querySelectorAll('.rem-btn').forEach(b=>{b.addEventListener('click',()=>{
-    if(players.length<=2){toast('⚠️ Min. 2 hráči');return;}
-    if(!confirm('Odebrat hráče?'))return;
-    players=players.filter(p=>p.id!==b.dataset.id);saveP(players);renderSettings();
+    if(activePlayers().length<=2){toast('⚠️ Min. 2 aktivní hráči');return;}
+    if(!confirm(`Archivovat hráče? Historické zápasy zůstanou.`))return;
+    const p=players.find(x=>x.id===b.dataset.id);
+    if(p){p.archived=true;saveP(players);renderSettings();toast('📦 Hráč archivován');}
+  });});
+  pel.querySelectorAll('.restore-btn').forEach(b=>{b.addEventListener('click',()=>{
+    const p=players.find(x=>x.id===b.dataset.id);
+    if(p){delete p.archived;saveP(players);renderSettings();toast('✅ Hráč obnoven');}
   });});
 
   const sel=document.getElementById('sport-list-set');
@@ -2174,6 +2650,7 @@ function renderSettings(){
     if(sports.length<=1){toast('⚠️ Min. 1 sport');return;}
     sports=sports.filter(s=>s.id!==b.dataset.id);saveSp(sports);renderSettings();
   });});
+  renderPinSettings();
 }
 
 document.getElementById('add-player-btn').addEventListener('click',()=>{
@@ -2247,7 +2724,7 @@ function showLoginStep(step){
 
 function renderPlayerPicks(){
   const el=document.getElementById('player-picks');
-  el.innerHTML=players.map(p=>{
+  el.innerHTML=activePlayers().map(p=>{
     const col=pColor(p.id);
     const hasPin=!!pins[p.id];
     return`<button class="player-pick-btn" data-id="${p.id}">
@@ -2319,8 +2796,8 @@ function submitPin(){
 // PIN settings section
 function renderPinSettings(){
   const el=document.getElementById('pin-settings');
-  el.innerHTML=players.map((p,i)=>{
-    const col=PP[i%PP.length];
+  el.innerHTML=activePlayers().map((p,i)=>{
+    const col=PP[players.indexOf(p)%PP.length];
     const hasPin=!!pins[p.id];
     return`<div class="player-row">
       <div class="color-dot" style="background:${col}"></div>
@@ -2341,12 +2818,6 @@ function renderPinSettings(){
   });
 }
 
-// Override renderSettings to include PIN section
-const _origRenderSettings=renderSettings;
-function renderSettings(){
-  _origRenderSettings();
-  renderPinSettings();
-}
 
 document.getElementById('logout-btn')?.addEventListener('click',logout);
 
