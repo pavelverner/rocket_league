@@ -1044,22 +1044,23 @@ function computeElo(ml){
   // k = K * winnerSets/totalSets: full K for a shutout, ~K/2 for narrowest win.
   // One update per match so winner always gains and loser always loses.
   const kScaled=(ws,tot)=>tot>0?ELO_K*ws/tot:ELO_K;
-  const updK=(aId,bId,aw,key,k)=>{
+  const updK=(aId,bId,sa,key,k)=>{
     init(aId);init(bId);
     if(R[aId][key]===undefined)R[aId][key]=ELO_DEF;
     if(R[bId][key]===undefined)R[bId][key]=ELO_DEF;
     const ra=R[aId][key],rb=R[bId][key];
-    const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=aw?1:0;
+    const ea=1/(1+Math.pow(10,(rb-ra)/400));
     R[aId][key]=Math.round(ra+k*(sa-ea));
     R[bId][key]=Math.round(rb+k*((1-sa)-(1-ea)));
   };
   [...ml].sort((a,b)=>new Date(a.date||0)-new Date(b.date||0)).forEach(m=>{
     if(m.mode==='1v1'){
-      // score="winner_sets:loser_sets"
+      // score="winner_sets:loser_sets" (or "p1_sets:p2_sets" for draw)
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
-      const k=kScaled(sw,sw+sl);
-      const p1won=m.winner==='1';
-      ['overall',m.sport].forEach(key=>updK(m.player1,m.player2,p1won,key,k));
+      const isDraw=m.winner==='draw';
+      const k=kScaled(isDraw?Math.max(sw,1):sw,sw+sl);
+      const sa=isDraw?0.5:(m.winner==='1'?1:0);
+      ['overall',m.sport].forEach(key=>updK(m.player1,m.player2,sa,key,k));
     }
     else if(m.mode==='1v1round'){
       // score="p1_sets:p2_sets"
@@ -1091,16 +1092,17 @@ function computeElo(ml){
       });
     }
     else if(m.mode==='2v2'){
-      // score="winner_sets:loser_sets"
+      // score="winner_sets:loser_sets" (or "teamA_sets:teamB_sets" for draw)
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
-      const k=kScaled(sw,sw+sl);
+      const isDraw=m.winner==='draw';
+      const k=kScaled(isDraw?Math.max(sw,1):sw,sw+sl);
       const [a1,a2]=m.teamA,[b1,b2]=m.teamB;
       [a1,a2,b1,b2].forEach(init);
-      const tAw=m.winner==='A';
+      const sa=isDraw?0.5:(m.winner==='A'?1:0);
       ['overall',m.sport].forEach(key=>{
         [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
         const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
-        const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
+        const ea=1/(1+Math.pow(10,(rb-ra)/400));
         const da=Math.round(k*(sa-ea)),db=Math.round(k*((1-sa)-(1-ea)));
         R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
         R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
@@ -1125,18 +1127,19 @@ function computeElo(ml){
       });
     }
     else{
-      // Classic 2v1 — score="winner_sets:loser_sets"
+      // Classic 2v1 — score="winner_sets:loser_sets" (or "solo_sets:team_sets" for draw)
       init(m.solo);init(m.teamA);init(m.teamB);
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
-      const k=kScaled(sw||1,(sw||1)+(sl||0));
-      const soloW=m.winner==='solo',sa=soloW?1:0;
+      const isDraw=m.winner==='draw';
+      const k=kScaled(isDraw?Math.max(sw,1):sw||1,(sw||1)+(sl||0));
+      const sa=isDraw?0.5:(m.winner==='solo'?1:0);
       ['overall',m.sport].forEach(key=>{
         if(R[m.solo][key]===undefined)R[m.solo][key]=ELO_DEF;
         if(R[m.teamA][key]===undefined)R[m.teamA][key]=ELO_DEF;
         if(R[m.teamB][key]===undefined)R[m.teamB][key]=ELO_DEF;
         const rs=R[m.solo][key],rt=Math.round(((R[m.teamA][key]||ELO_DEF)+(R[m.teamB][key]||ELO_DEF))/2);
         const ea=1/(1+Math.pow(10,(rt-rs)/400));
-        const ds=Math.round(k*(sa-ea)),dt=Math.round(k/2*(ea-sa));
+        const ds=Math.round(k*(sa-ea)),dt=Math.round(k/2*((1-sa)-(1-ea)));
         R[m.solo][key]+=ds;R[m.teamA][key]+=dt;R[m.teamB][key]+=dt;
       });
     }
@@ -1211,10 +1214,11 @@ function adjSet(side,d){
 }
 function getSetScore(){
   if(sc.w===0&&sc.l===0)return '';
-  if(sc.l>=sc.w){
+  const isDraw=E.winner==='draw';
+  if(isDraw?sc.w!==sc.l:sc.l>=sc.w){
     document.getElementById('set-picker').style.outline='2px solid var(--a2)';
     document.getElementById('set-picker').style.borderRadius='12px';
-    toast('⚠️ Vítěz musí vyhrát více setů než poražený');
+    toast(isDraw?'⚠️ Při remíze musí mít oba stejný počet setů':'⚠️ Vítěz musí vyhrát více setů než poražený');
     return null;
   }
   document.getElementById('set-picker').style.outline='';
@@ -1286,6 +1290,7 @@ function todayChallenge(){
   return CHALLENGES[(day+getChalOffset())%CHALLENGES.length];
 }
 function winnerOf(m){
+  if(m.winner==='draw') return null;
   if(m.mode==='1v1') return m.winner==='1'?m.player1:m.player2;
   if(m.mode==='2v1round'){
     const wins={};
@@ -1915,21 +1920,21 @@ function buildWinner(){
   let si,ch;
   if(E.mode==='1v1'){
     si=[{t:pName(E.p1),c:pColor(E.p1)},'vs',{t:pName(E.p2),c:pColor(E.p2)}];
-    ch=[{label:pName(E.p1),color:pColor(E.p1),val:'1'},{label:pName(E.p2),color:pColor(E.p2),val:'2'}];
+    ch=[{label:pName(E.p1),color:pColor(E.p1),val:'1'},{label:pName(E.p2),color:pColor(E.p2),val:'2'},{label:'Remíza',color:'var(--t2)',val:'draw',icon:'🤝'}];
   }else if(E.mode==='2v2'){
     const nameA=E.teamA.map(pName).join(' + ');
     const nameB=E.teamB.map(pName).join(' + ');
     si=[{t:nameA},'vs',{t:nameB}];
-    ch=[{label:nameA,color:'var(--t)',sub:'tým A',val:'A'},{label:nameB,color:'var(--t)',sub:'tým B',val:'B'}];
+    ch=[{label:nameA,color:'var(--t)',sub:'tým A',val:'A'},{label:nameB,color:'var(--t)',sub:'tým B',val:'B'},{label:'Remíza',color:'var(--t2)',val:'draw',icon:'🤝'}];
   }else{
     si=[{t:pName(E.solo),c:pColor(E.solo)},'vs',{t:pName(E.teamA)+' + '+pName(E.teamB)}];
-    ch=[{label:pName(E.solo),color:pColor(E.solo),sub:'sólový',val:'solo'},{label:pName(E.teamA)+' + '+pName(E.teamB),color:'var(--t)',sub:'dvojice',val:'team'}];
+    ch=[{label:pName(E.solo),color:pColor(E.solo),sub:'sólový',val:'solo'},{label:pName(E.teamA)+' + '+pName(E.teamB),color:'var(--t)',sub:'dvojice',val:'team'},{label:'Remíza',color:'var(--t2)',val:'draw',icon:'🤝'}];
   }
   document.getElementById('winner-pill').innerHTML=pill([{t:s.icon+' '+s.name,c:s.color},'·',...si]);
   const el=document.getElementById('winner-list');
   el.innerHTML=ch.map(c=>`
     <button class="choice-btn" data-val="${c.val}">
-      <span class="c-icon">🏆</span>
+      <span class="c-icon">${c.icon||'🏆'}</span>
       <span class="c-label" style="color:${c.color}">${c.label}</span>
       ${c.sub?`<span class="c-sub">${c.sub}</span>`:''}
     </button>`).join('');
@@ -1939,14 +1944,35 @@ function buildWinner(){
 document.getElementById('back-confirm').addEventListener('click',()=>goStep('winner'));
 function buildConfirm(){
   const s=sById(E.sport);
-  let wn,ln,wc;
-  if(E.mode==='1v1'){wn=E.winner==='1'?pName(E.p1):pName(E.p2);ln=E.winner==='1'?pName(E.p2):pName(E.p1);wc=E.winner==='1'?pColor(E.p1):pColor(E.p2);}
-  else if(E.mode==='2v2'){
-    const nameA=E.teamA.map(pName).join(' + ');const nameB=E.teamB.map(pName).join(' + ');
-    wn=E.winner==='A'?nameA:nameB;ln=E.winner==='A'?nameB:nameA;wc='var(--t)';
+  let wn,ln,wc,n1,n2;
+  const isDraw=E.winner==='draw';
+  if(E.mode==='1v1'){
+    n1=pName(E.p1);n2=pName(E.p2);
+    wn=isDraw?n1:(E.winner==='1'?n1:n2);
+    ln=isDraw?n2:(E.winner==='1'?n2:n1);
+    wc=isDraw?'var(--t2)':(E.winner==='1'?pColor(E.p1):pColor(E.p2));
+  }else if(E.mode==='2v2'){
+    n1=E.teamA.map(pName).join(' + ');n2=E.teamB.map(pName).join(' + ');
+    wn=isDraw?n1:(E.winner==='A'?n1:n2);
+    ln=isDraw?n2:(E.winner==='A'?n2:n1);
+    wc='var(--t)';
+  }else{
+    n1=pName(E.solo);n2=pName(E.teamA)+' + '+pName(E.teamB);
+    wn=isDraw?n1:(E.winner==='solo'?n1:n2);
+    ln=isDraw?n2:(E.winner==='solo'?n2:n1);
+    wc=isDraw?'var(--t2)':(E.winner==='solo'?pColor(E.solo):'var(--t)');
   }
-  else{wn=E.winner==='solo'?pName(E.solo):pName(E.teamA)+' + '+pName(E.teamB);ln=E.winner==='solo'?pName(E.teamA)+' + '+pName(E.teamB):pName(E.solo);wc=E.winner==='solo'?pColor(E.solo):'var(--t)';}
-  document.getElementById('confirm-card').innerHTML=`
+  document.getElementById('confirm-card').innerHTML=isDraw?`
+    <div class="confirm-card">
+      <div style="font-size:2rem">🤝</div>
+      <div class="c-winner" style="color:var(--t2)">${wn} — ${ln}</div>
+      <div class="c-vs">remíza</div>
+      <div class="c-meta">
+        <span class="badge" style="background:${s.color}18;color:${s.color}">${s.icon} ${s.name}</span>
+        ${E.mode==='2v1'?'<span class="badge m2v1">2v1</span>':''}
+        ${E.mode==='2v2'?'<span class="badge m2v1">2v2</span>':''}
+      </div>
+    </div>`:`
     <div class="confirm-card">
       <div style="font-size:2rem">🏆</div>
       <div class="c-winner" style="color:${wc}">${wn}</div>
@@ -1957,7 +1983,7 @@ function buildConfirm(){
         ${E.mode==='2v2'?'<span class="badge m2v1">2v2</span>':''}
       </div>
     </div>`;
-  initSetPicker(wn,ln);
+  initSetPicker(isDraw?n1:wn,isDraw?n2:ln);
   // challenge hint + toggle
   const ch=todayChallenge();
   const done=currentUser&&chalCompleted(currentUser);
@@ -2072,7 +2098,9 @@ function renderMatchList(){
     const date=m.date?new Date(m.date).toLocaleDateString('cs-CZ'):'';
     let ph;
     const b=id=>m.lastSetWinner===id?'<span style="color:#ffd600"> 🍺</span>':'';
-    if(m.mode==='1v1'){const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;ph=`<span style="color:${pColor(w)};font-weight:700">${pName(w)}${b(w)}</span> <span style="color:var(--t2)">vs</span> ${pName(l)}${b(l)}`;}
+    if(m.mode==='1v1'){
+      if(m.winner==='draw'){ph=`<span style="color:${pColor(m.player1)};font-weight:700">${pName(m.player1)}${b(m.player1)}</span> <span style="color:var(--t2)">🤝</span> <span style="color:${pColor(m.player2)};font-weight:700">${pName(m.player2)}${b(m.player2)}</span>`;}
+      else{const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;ph=`<span style="color:${pColor(w)};font-weight:700">${pName(w)}${b(w)}</span> <span style="color:var(--t2)">vs</span> ${pName(l)}${b(l)}`;}}
     else if(m.mode==='1v1round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const wId=r.winner==='1'?r.p1:r.p2;return`<div style="display:flex;align-items:center;gap:5px"><span style="color:${pColor(r.p1)};font-weight:700;font-size:.88rem">${pName(r.p1)}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="color:${pColor(r.p2)};font-weight:700;font-size:.88rem">${pName(r.p2)}</span>${r.score?`<span style="font-size:.78rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="color:${pColor(wId)};font-size:.8rem">✓</span></div>`;}).join('')+`</div>`;}
     else if(m.mode==='2v2round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const nA=(r.teamA||[]).map(pName).join('+'),nB=(r.teamB||[]).map(pName).join('+');return`<div style="display:flex;align-items:center;gap:4px"><span style="font-weight:700;font-size:.82rem">${nA}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="font-size:.82rem">${nB}</span>${r.score?`<span style="font-size:.75rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="font-size:.8rem">${r.winner==='A'?'<span style="color:var(--a3)">✓</span>':'<span style="color:var(--a2)">✓</span>'}</span></div>`;}).join('')+`</div>`;}
     else if(m.mode==='2v1round'){
@@ -2099,10 +2127,14 @@ function renderMatchList(){
     }
     else if(m.mode==='2v2'){
       const nameA=m.teamA.map(pName).join('+');const nameB=m.teamB.map(pName).join('+');
-      const wn=m.winner==='A'?nameA:nameB,ln=m.winner==='A'?nameB:nameA;
-      ph=`<span style="font-weight:700">${wn}</span> <span style="color:var(--t2)">vs</span> ${ln}`;
+      if(m.winner==='draw'){ph=`<span style="font-weight:700">${nameA}</span> <span style="color:var(--t2)">🤝</span> <span style="font-weight:700">${nameB}</span>`;}
+      else{const wn=m.winner==='A'?nameA:nameB,ln=m.winner==='A'?nameB:nameA;ph=`<span style="font-weight:700">${wn}</span> <span style="color:var(--t2)">vs</span> ${ln}`;}
     }
-    else{const sw=m.winner==='solo';const tb=m.lastSetWinner==='team'?'<span style="color:#ffd600"> 🍺</span>':'';ph=sw?`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">vs</span> ${pName(m.teamA)}+${pName(m.teamB)}${tb}`:`${pName(m.solo)}${b(m.solo)} <span style="color:var(--t2)">vs</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
+    else{
+      const tb=m.lastSetWinner==='team'?'<span style="color:#ffd600"> 🍺</span>':'';
+      if(m.winner==='draw'){ph=`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">🤝</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
+      else{const sw=m.winner==='solo';ph=sw?`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">vs</span> ${pName(m.teamA)}+${pName(m.teamB)}${tb}`:`${pName(m.solo)}${b(m.solo)} <span style="color:var(--t2)">vs</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
+    }
     const roundScore=m.mode==='2v1round'?(()=>{let s=0,t=0;(m.rounds||[]).forEach(r=>{r.winner==='solo'?s++:t++;});return`${s}:${t}`;})():'';
     return `<div class="match-card" style="--sport-color:${s.color}">
       <div class="si">${s.icon}</div>
@@ -2164,10 +2196,11 @@ function openEditModal(id){
     const [sw,sl]=m.score?m.score.split(':').map(Number):[0,0];
     editSc={w:sw||0,l:sl||0};
     // labels
-    let wn='Vítěz',ln='Poražený';
-    if(m.mode==='1v1'){wn=m.winner==='1'?pName(m.player1):pName(m.player2);ln=m.winner==='1'?pName(m.player2):pName(m.player1);}
-    else if(m.mode==='2v2'){const nA=m.teamA.map(pName).join('+'),nB=m.teamB.map(pName).join('+');wn=m.winner==='A'?nA:nB;ln=m.winner==='A'?nB:nA;}
-    else{wn=m.winner==='solo'?pName(m.solo):(pName(m.teamA)+'+'+pName(m.teamB));ln=m.winner==='solo'?(pName(m.teamA)+'+'+pName(m.teamB)):pName(m.solo);}
+    let wn,ln;
+    const isDraw=m.winner==='draw';
+    if(m.mode==='1v1'){wn=isDraw?pName(m.player1):(m.winner==='1'?pName(m.player1):pName(m.player2));ln=isDraw?pName(m.player2):(m.winner==='1'?pName(m.player2):pName(m.player1));}
+    else if(m.mode==='2v2'){const nA=m.teamA.map(pName).join('+'),nB=m.teamB.map(pName).join('+');wn=isDraw?nA:(m.winner==='A'?nA:nB);ln=isDraw?nB:(m.winner==='A'?nB:nA);}
+    else{const n1=pName(m.solo),n2=pName(m.teamA)+'+'+pName(m.teamB);wn=isDraw?n1:(m.winner==='solo'?n1:n2);ln=isDraw?n2:(m.winner==='solo'?n2:n1);}
     document.getElementById('edit-sp-winner').textContent=wn;
     document.getElementById('edit-sp-loser').textContent=ln;
     renderEditSetRows();
@@ -2232,7 +2265,8 @@ document.getElementById('edit-save-btn').addEventListener('click',()=>{
   // score
   if(!m.mode.includes('round')){
     if(editSc.w>0||editSc.l>0){
-      if(editSc.l>=editSc.w){toast('⚠️ Vítěz musí mít více setů');return;}
+      const isDrawEdit=m.winner==='draw';
+      if(isDrawEdit?editSc.w!==editSc.l:editSc.l>=editSc.w){toast(isDrawEdit?'⚠️ Při remíze musí mít oba stejný počet setů':'⚠️ Vítěz musí mít více setů');return;}
       m.score=`${editSc.w}:${editSc.l}`;
     }
   }
@@ -2287,6 +2321,7 @@ function renderStats(){
     // 1v1 stats
     const pOvo=ovo.filter(m=>m.player1===p.id||m.player2===p.id);
     const pWin=pOvo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
+    const pDraw=pOvo.filter(m=>m.winner==='draw').length;
     // 2v1 stats – každá hra = 1 pro procenta (vážení 0.5 platí jen pro ELO a trend)
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
     const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
@@ -2302,19 +2337,27 @@ function renderStats(){
     // combined
     const totAll=pOvo.length+p2v1.length+p2v2.length+p1v1rSets.length+p2v2rSets.length;
     const winAll=pWin+p2v1Win+p2v2Win+p1v1rWin+p2v2rWin;
-    const lossAll=totAll-winAll;
+    const drawAll=pDraw;
+    const lossAll=totAll-winAll-drawAll;
     const pWr=totAll?Math.round(winAll/totAll*100):null;
     const fmt=n=>Number.isInteger(n)?n:n.toFixed(1);
     // form: last 5 across all modes, sorted by date
     const allPM=[...fm.filter(m=>playedIn(m,p.id))].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     const formDots=allPM.map(m=>{
       let cls='l';
-      if(m.mode==='1v1'){cls=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')?'w':'l';}
+      if(m.mode==='1v1'){
+        if(m.winner==='draw')cls='n';
+        else cls=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')?'w':'l';
+      }
       else if(m.mode==='1v1round'){const sets=(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id);const w=sets.filter(r=>(r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')).length;cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
       else if(m.mode==='2v2round'){const sets=(m.rounds||[]).filter(r=>(r.teamA||[]).includes(p.id)||(r.teamB||[]).includes(p.id));const w=sets.filter(r=>((r.teamA||[]).includes(p.id)&&r.winner==='A')||((r.teamB||[]).includes(p.id)&&r.winner==='B')).length;cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
-      else if(m.mode==='2v2'){cls=((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')?'w':'l';}
+      else if(m.mode==='2v2'){
+        if(m.winner==='draw')cls='n';
+        else cls=((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')?'w':'l';
+      }
       else if(m.mode==='2v1'){
-        if(m.solo===p.id) cls=m.winner==='solo'?'w':'l';
+        if(m.winner==='draw')cls='n';
+        else if(m.solo===p.id) cls=m.winner==='solo'?'w':'l';
         else cls=m.winner==='team'?'n':'l'; // výhra v páru = neutrální (0.5)
       }
       else if(m.mode==='2v1round'){
@@ -2331,7 +2374,7 @@ function renderStats(){
         <div class="elo-name" style="color:${pColor(p.id)}">${p.name}</div>
         ${pills?`<div class="elo-scores">${pills}</div>`:''}
         ${totAll?`<div style="display:flex;align-items:center;gap:10px;margin-top:5px">
-          <span style="font-size:.72rem;color:var(--t2)"><strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> <span style="opacity:.6">${fmt(winAll)}:${fmt(lossAll)}</span></span>
+          <span style="font-size:.72rem;color:var(--t2)"><strong style="color:${pWr>=50?'var(--a3)':'var(--a2)'}">${pWr}%</strong> <span style="opacity:.6">${fmt(winAll)}${drawAll?':'+drawAll:''}:${fmt(lossAll)}</span></span>
           ${formDots?`<div class="form-dots" style="margin-top:0">${formDots}</div>`:''}
         </div>`:''}
       </div>
@@ -2349,17 +2392,19 @@ function renderStats(){
       const sm=ovo.filter(m=>m.sport===s.id&&(m.player1===p.id||m.player2===p.id));
       if(!sm.length)return null;
       const w=sm.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-      return{s,w,l:sm.length-w};
+      const d=sm.filter(m=>m.winner==='draw').length;
+      return{s,w,d,l:sm.length-w-d};
     }).filter(Boolean);
     const tot=ovo.filter(m=>m.player1===p.id||m.player2===p.id).length;
     const win=ovo.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
+    const drw=ovo.filter(m=>m.player1===p.id||m.player2===p.id).filter(m=>m.winner==='draw').length;
     const wr=tot?Math.round(win/tot*100):0;
     const col=pColor(p.id);
     // forma: posledních 5 zápasů (1v1)
     const formMs=[...ovo].filter(m=>m.player1===p.id||m.player2===p.id).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
     const formRow=formMs.length>=2?`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <span style="font-size:.68rem;color:var(--t2);text-transform:uppercase;letter-spacing:.08em">Forma</span>
-      <div class="form-dots" style="margin-top:0">${formMs.map(m=>{const w=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2');return`<div class="fd ${w?'w':'l'}"></div>`;}).join('')}</div>
+      <div class="form-dots" style="margin-top:0">${formMs.map(m=>{const isDraw=m.winner==='draw';const w=!isDraw&&((m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2'));return`<div class="fd ${isDraw?'n':w?'w':'l'}"></div>`;}).join('')}</div>
     </div>`:'';
     // beer stat: last set wins
     const lsMatches=fm.filter(m=>m.lastSetWinner&&(m.mode==='1v1'?(m.player1===p.id||m.player2===p.id):(m.solo===p.id||m.teamA===p.id||m.teamB===p.id)));
@@ -2369,10 +2414,10 @@ function renderStats(){
     return `<div class="player-stat-card" style="--pc:${col}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="pname" style="color:${col};margin-bottom:0">${p.name}</div>
-        ${tot?`<div style="text-align:right"><div style="font-size:1.5rem;font-weight:900;color:${wr>=50?'var(--a3)':'var(--a2)'};line-height:1">${wr}%</div><div style="font-size:.65rem;color:var(--t2)">${win}/${tot} výher</div></div>`:''}
+        ${tot?`<div style="text-align:right"><div style="font-size:1.5rem;font-weight:900;color:${wr>=50?'var(--a3)':'var(--a2)'};line-height:1">${wr}%</div><div style="font-size:.65rem;color:var(--t2)">${win}${drw?'/'+drw+'R':''} / ${tot} výher</div></div>`:''}
       </div>
       ${formRow}
-      ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span> / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
+      ${rows.length?rows.map(r=>`<div class="sport-row"><span>${r.s.icon} ${r.s.name}</span><span><span class="w">${r.w}V</span>${r.d?` / <span style="color:var(--t2)">${r.d}R</span>`:''} / <span class="l">${r.l}P</span></span></div>`).join(''):'<div style="color:var(--t2);font-size:.82rem">Bez 1v1</div>'}
       ${beerRow}
       <div class="wr-bar" style="margin-top:10px"><div class="wr-fill" data-wr="${wr}" style="width:0%"></div></div>
     </div>`;
@@ -2392,8 +2437,10 @@ function renderStats(){
         if(p.id===o.id){html+=`<td class="self">—</td>`;return;}
         const ms=ovo.filter(m=>(m.player1===p.id&&m.player2===o.id)||(m.player1===o.id&&m.player2===p.id));
         const w=ms.filter(m=>(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')).length;
-        const cls=!ms.length?'':w>ms.length-w?'win':w<ms.length-w?'loss':'';
-        html+=`<td class="${cls}">${ms.length?`${w}:${ms.length-w}`:'–'}</td>`;
+        const dr=ms.filter(m=>m.winner==='draw').length;
+        const l=ms.length-w-dr;
+        const cls=!ms.length?'':w>l?'win':w<l?'loss':'';
+        html+=`<td class="${cls}">${ms.length?`${w}${dr?'/'+dr:''}:${l}`:'–'}</td>`;
       });
       html+='</tr>';
     });
