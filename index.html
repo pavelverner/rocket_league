@@ -1584,7 +1584,7 @@ function build1v1Pick(){
       </div>`:''}
       <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber ${need} hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp1-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
+        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp1-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'};display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2"><span>${p.name}</span><span style="font-size:.8em;height:1.1em">${on?'✓':''}</span></button>`;}).join('')}
       </div>
       <button class="save-btn" id="1v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/${need}) →</button>`;
     if(activePlayers().length>=3){
@@ -1738,7 +1738,7 @@ function build2v1Pick(){
       </div>
       <div style="font-size:.72rem;color:var(--t2);margin-bottom:12px">Vyber 3 hráče:</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp2-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'}">${p.name}${on?' ✓':''}</button>`;}).join('')}
+        ${activePlayers().map(p=>{const on=picked.has(p.id);return`<button class="chal-mark-btn${on?' on':''} pp2-btn" data-id="${p.id}" style="color:${pColor(p.id)};border-color:${on?pColor(p.id):pColor(p.id)+'50'};display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2"><span>${p.name}</span><span style="font-size:.8em;height:1.1em">${on?'✓':''}</span></button>`;}).join('')}
       </div>
       <button class="save-btn" id="2v1pick-ok" style="animation:none;${ready?'':'opacity:.35;pointer-events:none'}">Potvrdit (${picked.size}/3) →</button>`;
     document.getElementById('pp2-classic').addEventListener('click',()=>{rotation=false;render();});
