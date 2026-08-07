@@ -224,10 +224,11 @@ nav {
 .step-back {
   background: var(--s2); border: 1.5px solid var(--t3); color: var(--t);
   min-width: 42px; height: 42px; border-radius: 12px; cursor: pointer;
-  font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: background .15s, border-color .15s, transform .1s;
 }
 .step-back:active { background: var(--a); border-color: var(--a); transform: scale(.93); }
+.step-back .chevron-left { display: block; width: 9px; height: 9px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-left: 3px; }
 .step-title { font-size: 1.15rem; font-weight: 700; }
 .step-sub { font-size: .78rem; color: var(--t2); margin-top: 2px; }
 
@@ -534,6 +535,7 @@ input:focus { border-color: var(--a); }
 }
 .round-wtn.sel-solo { border-color: var(--a); color: var(--a); background: rgba(124,111,255,.12); }
 .round-wtn.sel-team { border-color: var(--a2); color: var(--a2); background: rgba(255,94,125,.12); }
+.round-wtn.sel-draw { border-color: var(--t2); color: var(--t); background: rgba(255,255,255,.08); }
 .round-score-row { display: flex; align-items: center; gap: 8px; }
 .round-sc-cell { display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--s2); border-radius: 10px; padding: 4px 6px; flex: 1; }
 .round-sc-cell .sc-btn { background: var(--s1); border: 1px solid rgba(255,255,255,.08); border-radius: 7px; color: var(--t); width: 28px; height: 28px; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -645,58 +647,6 @@ input:focus { border-color: var(--a); }
 }
 .user-chip:active { background: var(--s3); }
 .user-chip-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: #fff; }
-
-/* ── VACATION ── */
-.vac-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;overflow:hidden;}
-.vac-overlay.open{display:flex;}
-.vac-overlay-inner{flex:1;overflow-y:auto;padding:20px 16px 100px;scrollbar-width:none;}
-.vac-overlay-inner::-webkit-scrollbar{display:none;}
-.vac-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
-.vac-pod-card{background:var(--s1);border-radius:var(--r);padding:14px 10px;text-align:center;border-top:2px solid var(--pc,var(--a));box-shadow:0 2px 12px rgba(0,0,0,.25);}
-.vac-pod-rank{font-size:1.4rem;margin-bottom:3px;}
-.vac-pod-name{font-size:.8rem;font-weight:700;}
-.vac-pod-pts{font-size:1.6rem;font-weight:900;color:var(--pc,var(--a));}
-.vac-pod-sub{font-size:.62rem;color:var(--t2);}
-.vac-sport-card{background:var(--s1);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.2);border-left:3px solid var(--svc,var(--a));transition:transform .12s,background .12s;}
-.vac-sport-card:active{transform:scale(.98);background:var(--s2);}
-.vac-sport-icon{font-size:1.5rem;min-width:30px;text-align:center;}
-.vac-sport-name{font-size:.93rem;font-weight:700;}
-.vac-done-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:2px 9px;font-size:.7rem;font-weight:700;}
-.vac-round-card{background:var(--s1);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;}
-.vac-round-title{font-size:.75rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
-.vac-player-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--t3);}
-.vac-player-row:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-.vac-player-label{font-size:.9rem;font-weight:700;min-width:52px;}
-.vac-counter{display:flex;align-items:center;gap:6px;margin-left:auto;}
-.vac-cbtn{background:var(--s2);border:1px solid var(--t3);color:var(--t);width:34px;height:34px;border-radius:9px;font-size:1.2rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;}
-.vac-cbtn:active{background:var(--a);}
-.vac-cval{min-width:28px;text-align:center;font-size:1.15rem;font-weight:800;}
-.vac-cmax{font-size:.72rem;color:var(--t2);}
-.vac-2v1-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-.vac-2v1-btn{background:var(--s2);border:1.5px solid var(--t3);color:var(--t2);border-radius:12px;padding:10px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;transition:all .15s;}
-.vac-2v1-btn.s-solo{border-color:var(--a3);color:var(--a3);background:rgba(62,255,160,.12);}
-.vac-2v1-btn.s-team{border-color:var(--a2);color:var(--a2);background:rgba(255,94,125,.12);}
-.vac-result-table{background:var(--s1);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
-.vac-result-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--t3);}
-.vac-result-row:last-child{border-bottom:none;}
-.vac-result-rank{font-size:1.1rem;min-width:26px;text-align:center;}
-.vac-result-name{font-weight:700;font-size:.9rem;flex:1;}
-.vac-result-score{font-size:.88rem;font-weight:700;color:var(--t2);}
-.vac-rank-pick-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0 12px;}
-.vac-rank-pick{background:var(--s2);border:1.5px solid var(--t3);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-weight:700;font-size:.88rem;transition:all .15s;}
-.vac-game-list{background:var(--s2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;}
-.vac-game-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--t3);font-size:.82rem;flex-wrap:wrap;}
-.vac-game-item:last-child{border-bottom:none;}
-.vac-dist-checks{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.vac-dist-btn{flex:1;min-width:52px;background:var(--s2);border:1.5px solid var(--t3);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s;}
-.vac-dist-btn.scored{border-color:var(--a3);background:rgba(62,255,160,.15);color:var(--a3);}
-.vac-dist-btn.locked{opacity:.3;cursor:default;pointer-events:none;}
-.vac-info-box{background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:var(--t2);line-height:1.5;}
-.vac-info-box strong{color:var(--t);}
-.vac-save-btn{background:var(--a);color:#fff;border:none;border-radius:var(--r);padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;width:100%;font-family:inherit;margin-top:8px;transition:filter .15s,transform .12s;}
-.vac-save-btn:active{filter:brightness(.9);transform:scale(.98);}
-.vac-section-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t2);margin:18px 0 10px;display:flex;align-items:center;gap:10px;}
-.vac-section-lbl::after{content:'';flex:1;height:1px;background:var(--t3);}
 </style>
 </head>
 <body>
@@ -798,7 +748,7 @@ input:focus { border-color: var(--a); }
     <div class="choices-wrap"><div id="sport-choices" class="choices-grid"></div></div>
   </div>
   <div id="step-mode" class="step">
-    <div class="step-header"><button class="step-back" id="back-mode">←</button><div><div class="step-title">Jak hrajete?</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-mode"><span class="chevron-left"></span></button><div><div class="step-title">Jak hrajete?</div></div></div>
     <div id="mode-pill" class="entry-pill"></div>
     <div class="choices-wrap">
       <div class="choices-grid" id="mode-grid">
@@ -809,22 +759,22 @@ input:focus { border-color: var(--a); }
     </div>
   </div>
   <div id="step-matchup" class="step">
-    <div class="step-header"><button class="step-back" id="back-matchup">←</button><div><div class="step-title">Kdo hraje?</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-matchup"><span class="chevron-left"></span></button><div><div class="step-title">Kdo hraje?</div></div></div>
     <div id="matchup-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="matchup-list"></div></div>
   </div>
   <div id="step-solo" class="step">
-    <div class="step-header"><button class="step-back" id="back-solo">←</button><div><div class="step-title">Kdo hraje sám?</div><div class="step-sub">hraje s výhodou</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-solo"><span class="chevron-left"></span></button><div><div class="step-title">Kdo hraje sám?</div><div class="step-sub">hraje s výhodou</div></div></div>
     <div id="solo-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="solo-list"></div></div>
   </div>
   <div id="step-1v1pick" class="step">
-    <div class="step-header"><button class="step-back" id="back-1v1pick">←</button><div><div class="step-title">Kdo hraje?</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-1v1pick"><span class="chevron-left"></span></button><div><div class="step-title">Kdo hraje?</div></div></div>
     <div id="1v1pick-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="1v1pick-list"></div></div>
   </div>
   <div id="step-1v1round" class="step">
-    <div class="step-header"><button class="step-back" id="back-1v1round">←</button><div><div class="step-title">1v1 Rotace</div><div class="step-sub">Každý s každým</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-1v1round"><span class="chevron-left"></span></button><div><div class="step-title">1v1 Rotace</div><div class="step-sub">Každý s každým</div></div></div>
     <div id="1v1round-pill" class="entry-pill"></div>
     <div id="1v1round-rows" class="choices-wrap" style="padding-top:8px"></div>
     <div class="chal-mark-wrap" id="1v1round-chal-wrap"></div>
@@ -833,7 +783,7 @@ input:focus { border-color: var(--a); }
     <button class="save-btn" id="1v1round-save-btn" style="animation:none">✓ Uložit kolo</button>
   </div>
   <div id="step-2v2round" class="step">
-    <div class="step-header"><button class="step-back" id="back-2v2round">←</button><div><div class="step-title">2v2 Rotace</div><div class="step-sub">Střídání párů</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-2v2round"><span class="chevron-left"></span></button><div><div class="step-title">2v2 Rotace</div><div class="step-sub">Střídání párů</div></div></div>
     <div id="2v2round-pill" class="entry-pill"></div>
     <div id="2v2round-rows" class="choices-wrap" style="padding-top:8px"></div>
     <div class="chal-mark-wrap" id="2v2round-chal-wrap"></div>
@@ -842,12 +792,12 @@ input:focus { border-color: var(--a); }
     <button class="save-btn" id="2v2round-save-btn" style="animation:none">✓ Uložit kolo</button>
   </div>
   <div id="step-2v1pick" class="step">
-    <div class="step-header"><button class="step-back" id="back-2v1pick">←</button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">vyber 3 hráče</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-2v1pick"><span class="chevron-left"></span></button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">vyber 3 hráče</div></div></div>
     <div id="2v1pick-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="2v1pick-list"></div></div>
   </div>
   <div id="step-2v1round" class="step">
-    <div class="step-header"><button class="step-back" id="back-2v1round">←</button><div><div class="step-title">Kolo 2v1</div><div class="step-sub">Každý hraje jednou sám</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-2v1round"><span class="chevron-left"></span></button><div><div class="step-title">Kolo 2v1</div><div class="step-sub">Každý hraje jednou sám</div></div></div>
     <div id="round-pill" class="entry-pill"></div>
     <div id="round-rows" class="choices-wrap" style="padding-top:8px"></div>
     <div class="chal-mark-wrap" id="round-chal-wrap"></div>
@@ -856,17 +806,17 @@ input:focus { border-color: var(--a); }
     <button class="save-btn" id="round-save-btn" style="animation:none">✓ Uložit kolo</button>
   </div>
   <div id="step-2v2" class="step">
-    <div class="step-header"><button class="step-back" id="back-2v2">←</button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">čtyřhra 2v2</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-2v2"><span class="chevron-left"></span></button><div><div class="step-title">Kdo hraje?</div><div class="step-sub">čtyřhra 2v2</div></div></div>
     <div id="2v2-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="2v2-list"></div></div>
   </div>
   <div id="step-winner" class="step">
-    <div class="step-header"><button class="step-back" id="back-winner">←</button><div><div class="step-title">Kdo vyhrál?</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-winner"><span class="chevron-left"></span></button><div><div class="step-title">Kdo vyhrál?</div></div></div>
     <div id="winner-pill" class="entry-pill"></div>
     <div class="choices-wrap"><div id="winner-list" class="choices-grid"></div></div>
   </div>
   <div id="step-confirm" class="step">
-    <div class="step-header"><button class="step-back" id="back-confirm">←</button><div><div class="step-title">Uložit zápas</div></div></div>
+    <div class="step-header"><button class="step-back" id="back-confirm"><span class="chevron-left"></span></button><div><div class="step-title">Uložit zápas</div></div></div>
     <div id="confirm-card"></div>
     <div class="chal-hint" id="chal-hint"></div>
     <div class="set-picker" id="set-picker">
@@ -933,27 +883,6 @@ input:focus { border-color: var(--a); }
   <button class="settings-btn danger" id="logout-btn"><span class="s-icon">🚪</span> Odhlásit se</button>
 </div>
 
-<div id="v-vacation" class="view">
-  <div class="page-title">🏖️ Dovolená</div>
-  <div class="section-lbl">Celkové pořadí</div>
-  <div id="vac-leaderboard"></div>
-  <div class="section-lbl">Sporty</div>
-  <div id="vac-sport-list"></div>
-</div>
-
-</div>
-
-<div id="vac-overlay" class="vac-overlay">
-  <div class="vac-overlay-inner">
-    <div class="step-header" style="margin-bottom:16px;padding-bottom:18px;border-bottom:1px solid var(--t3)">
-      <button class="step-back" onclick="closeVacOverlay()">←</button>
-      <div>
-        <div class="step-title" id="vac-overlay-title"></div>
-        <div class="step-sub" id="vac-overlay-sub"></div>
-      </div>
-    </div>
-    <div id="vac-overlay-content"></div>
-  </div>
 </div>
 
 <nav>
@@ -961,7 +890,6 @@ input:focus { border-color: var(--a); }
   <button class="tab new-tab" data-view="new-match"><span class="tiw">＋</span><span class="tl" style="margin-top:2px;color:var(--t2)">Zápas</span></button>
   <button class="tab" data-view="stats"><span class="ti">📊</span><span class="tl">Statistiky</span></button>
   <button class="tab" data-view="settings"><span class="ti">⚙️</span><span class="tl">Nastavení</span></button>
-  <button class="tab" data-view="vacation"><span class="ti">🏖️</span><span class="tl">Dovol.</span></button>
 </nav>
 <div id="toast"></div>
 
@@ -1044,6 +972,10 @@ function computeElo(ml){
   // k = K * winnerSets/totalSets: full K for a shutout, ~K/2 for narrowest win.
   // One update per match so winner always gains and loser always loses.
   const kScaled=(ws,tot)=>tot>0?ELO_K*ws/tot:ELO_K;
+  // Draws are always the "narrowest" result (K/2), independent of any score entered —
+  // routing them through kScaled would return full K when no score is recorded (tot=0).
+  const drawSa=(isDraw,winCond)=>isDraw?0.5:(winCond?1:0);
+  const drawK=(isDraw,winnerScore,tot)=>isDraw?ELO_K/2:kScaled(winnerScore,tot);
   const updK=(aId,bId,sa,key,k)=>{
     init(aId);init(bId);
     if(R[aId][key]===undefined)R[aId][key]=ELO_DEF;
@@ -1058,18 +990,18 @@ function computeElo(ml){
       // score="winner_sets:loser_sets" (or "p1_sets:p2_sets" for draw)
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
       const isDraw=m.winner==='draw';
-      const k=kScaled(isDraw?Math.max(sw,1):sw,sw+sl);
-      const sa=isDraw?0.5:(m.winner==='1'?1:0);
+      const sa=drawSa(isDraw,m.winner==='1');
+      const k=drawK(isDraw,sw,sw+sl);
       ['overall',m.sport].forEach(key=>updK(m.player1,m.player2,sa,key,k));
     }
     else if(m.mode==='1v1round'){
       // score="p1_sets:p2_sets"
       (m.rounds||[]).forEach(r=>{
         const [p1s,p2s]=r.score?r.score.split(':').map(Number):[0,0];
-        const p1won=r.winner==='1';
-        const ws=p1won?p1s:p2s;
-        const k=kScaled(ws,p1s+p2s);
-        ['overall',m.sport].forEach(key=>updK(r.p1,r.p2,p1won,key,k));
+        const isDraw=r.winner==='draw';
+        const sa=drawSa(isDraw,r.winner==='1');
+        const k=drawK(isDraw,r.winner==='1'?p1s:p2s,p1s+p2s);
+        ['overall',m.sport].forEach(key=>updK(r.p1,r.p2,sa,key,k));
       });
     }
     else if(m.mode==='2v2round'){
@@ -1079,12 +1011,13 @@ function computeElo(ml){
         if(!a1||!a2||!b1||!b2)return;
         [a1,a2,b1,b2].forEach(init);
         const [sA,sB]=r.score?r.score.split(':').map(Number):[0,0];
-        const tAw=r.winner==='A';
-        const k=kScaled(tAw?sA:sB,sA+sB);
+        const isDraw=r.winner==='draw';
+        const sa=drawSa(isDraw,r.winner==='A');
+        const k=drawK(isDraw,r.winner==='A'?sA:sB,sA+sB);
         ['overall',m.sport].forEach(key=>{
           [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
           const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
-          const ea=1/(1+Math.pow(10,(rb-ra)/400)),sa=tAw?1:0;
+          const ea=1/(1+Math.pow(10,(rb-ra)/400));
           const da=Math.round(k*(sa-ea)),db=Math.round(k*((1-sa)-(1-ea)));
           R[a1][key]+=Math.round(da/2);R[a2][key]+=Math.round(da/2);
           R[b1][key]+=Math.round(db/2);R[b2][key]+=Math.round(db/2);
@@ -1095,10 +1028,10 @@ function computeElo(ml){
       // score="winner_sets:loser_sets" (or "teamA_sets:teamB_sets" for draw)
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
       const isDraw=m.winner==='draw';
-      const k=kScaled(isDraw?Math.max(sw,1):sw,sw+sl);
+      const k=drawK(isDraw,sw,sw+sl);
       const [a1,a2]=m.teamA,[b1,b2]=m.teamB;
       [a1,a2,b1,b2].forEach(init);
-      const sa=isDraw?0.5:(m.winner==='A'?1:0);
+      const sa=drawSa(isDraw,m.winner==='A');
       ['overall',m.sport].forEach(key=>{
         [a1,a2,b1,b2].forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
         const ra=Math.round((R[a1][key]+R[a2][key])/2),rb=Math.round((R[b1][key]+R[b2][key])/2);
@@ -1113,9 +1046,9 @@ function computeElo(ml){
       (m.rounds||[]).forEach(r=>{
         init(r.soloId);r.teamIds.forEach(init);
         const [solS,teamS]=r.score?r.score.split(':').map(Number):[0,0];
-        const soloW=r.winner==='solo';
-        const k=kScaled(soloW?solS:teamS,solS+teamS);
-        const sa=soloW?1:0;
+        const isDraw=r.winner==='draw';
+        const sa=drawSa(isDraw,r.winner==='solo');
+        const k=drawK(isDraw,r.winner==='solo'?solS:teamS,solS+teamS);
         ['overall',m.sport].forEach(key=>{
           if(R[r.soloId][key]===undefined)R[r.soloId][key]=ELO_DEF;
           r.teamIds.forEach(id=>{if(R[id][key]===undefined)R[id][key]=ELO_DEF;});
@@ -1131,8 +1064,8 @@ function computeElo(ml){
       init(m.solo);init(m.teamA);init(m.teamB);
       const [sw,sl]=m.score?m.score.split(':').map(Number):[1,0];
       const isDraw=m.winner==='draw';
-      const k=kScaled(isDraw?Math.max(sw,1):sw||1,(sw||1)+(sl||0));
-      const sa=isDraw?0.5:(m.winner==='solo'?1:0);
+      const k=drawK(isDraw,sw||1,(sw||1)+(sl||0));
+      const sa=drawSa(isDraw,m.winner==='solo');
       ['overall',m.sport].forEach(key=>{
         if(R[m.solo][key]===undefined)R[m.solo][key]=ELO_DEF;
         if(R[m.teamA][key]===undefined)R[m.teamA][key]=ELO_DEF;
@@ -1170,7 +1103,6 @@ function showView(name){
   if(name==='new-match') initEntry();
   if(name==='stats')     renderStats();
   if(name==='settings')  renderSettings();
-  if(name==='vacation')  renderVacDashboard();
 }
 
 // ─── FILTER BARS ─────────────────────────────────────────────────────────────
@@ -1295,6 +1227,7 @@ function winnerOf(m){
   if(m.mode==='2v1round'){
     const wins={};
     (m.rounds||[]).forEach(r=>{
+      if(r.winner==='draw') return;
       if(r.winner==='solo') wins[r.soloId]=(wins[r.soloId]||0)+1;
       else r.teamIds.forEach(id=>{wins[id]=(wins[id]||0)+1;});
     });
@@ -1649,6 +1582,7 @@ function renderRoundRows1v1(){
         <button class="round-wtn${r.winner==='1'?' sel-solo':''}" data-ri="${i}" data-w="1">🏆 ${pName(r.p1)}</button>
         <button class="round-wtn${r.winner==='2'?' sel-team':''}" data-ri="${i}" data-w="2">🏆 ${pName(r.p2)}</button>
       </div>
+      <div style="margin-bottom:8px"><button class="round-wtn${r.winner==='draw'?' sel-draw':''}" data-ri="${i}" data-w="draw" style="width:100%">🤝 Remíza</button></div>
       <div class="round-score-row">
         <div class="round-sc-cell"><button class="sc-btn" onclick="adjRound1v1(${i},'sw',-1)">−</button><span class="sc-val">${r.sw}</span><button class="sc-btn" onclick="adjRound1v1(${i},'sw',1)">+</button></div>
         <span style="color:var(--t2);font-size:.9rem">:</span>
@@ -1656,9 +1590,9 @@ function renderRoundRows1v1(){
       </div>
     </div>`).join('');
   animateChildren(el,'anim-up',80);
-  el.querySelectorAll('.round-wtn').forEach(b=>{b.addEventListener('click',()=>{E.round1v1[parseInt(b.dataset.ri)].winner=b.dataset.w;renderRoundRows1v1();});});
+  el.querySelectorAll('.round-wtn').forEach(b=>{b.addEventListener('click',()=>{const r=E.round1v1[parseInt(b.dataset.ri)];r.winner=b.dataset.w;r.drawManual=b.dataset.w==='draw';renderRoundRows1v1();});});
 }
-function adjRound1v1(i,key,d){const r=E.round1v1[i];r[key]=Math.max(0,r[key]+d);if(r.sw>r.lw)r.winner='1';else if(r.lw>r.sw)r.winner='2';renderRoundRows1v1();}
+function adjRound1v1(i,key,d){const r=E.round1v1[i];r[key]=Math.max(0,r[key]+d);if(r.winner==='draw'&&r.drawManual)return renderRoundRows1v1();if(r.sw>r.lw)r.winner='1';else if(r.lw>r.sw)r.winner='2';else if(r.sw>0)r.winner='draw';else r.winner=null;renderRoundRows1v1();}
 document.getElementById('1v1round-save-btn').addEventListener('click',()=>{
   if(!E.round1v1||!E.round1v1.every(r=>r.winner)){toast('⚠️ Vyber výsledek pro každý set');return;}
   const date=document.getElementById('1v1round-date-input').value;
@@ -1700,6 +1634,7 @@ function renderRoundRows2v2(){
         <button class="round-wtn${r.winner==='A'?' sel-solo':''}" data-ri="${i}" data-w="A">🏆 ${nA}</button>
         <button class="round-wtn${r.winner==='B'?' sel-team':''}" data-ri="${i}" data-w="B">🏆 ${nB}</button>
       </div>
+      <div style="margin-bottom:8px"><button class="round-wtn${r.winner==='draw'?' sel-draw':''}" data-ri="${i}" data-w="draw" style="width:100%">🤝 Remíza</button></div>
       <div class="round-score-row">
         <div class="round-sc-cell"><button class="sc-btn" onclick="adjRound2v2(${i},'sw',-1)">−</button><span class="sc-val">${r.sw}</span><button class="sc-btn" onclick="adjRound2v2(${i},'sw',1)">+</button></div>
         <span style="color:var(--t2);font-size:.9rem">:</span>
@@ -1708,9 +1643,9 @@ function renderRoundRows2v2(){
     </div>`;
   }).join('');
   animateChildren(el,'anim-up',80);
-  el.querySelectorAll('.round-wtn').forEach(b=>{b.addEventListener('click',()=>{E.round2v2[parseInt(b.dataset.ri)].winner=b.dataset.w;renderRoundRows2v2();});});
+  el.querySelectorAll('.round-wtn').forEach(b=>{b.addEventListener('click',()=>{const r=E.round2v2[parseInt(b.dataset.ri)];r.winner=b.dataset.w;r.drawManual=b.dataset.w==='draw';renderRoundRows2v2();});});
 }
-function adjRound2v2(i,key,d){const r=E.round2v2[i];r[key]=Math.max(0,r[key]+d);if(r.sw>r.lw)r.winner='A';else if(r.lw>r.sw)r.winner='B';renderRoundRows2v2();}
+function adjRound2v2(i,key,d){const r=E.round2v2[i];r[key]=Math.max(0,r[key]+d);if(r.winner==='draw'&&r.drawManual)return renderRoundRows2v2();if(r.sw>r.lw)r.winner='A';else if(r.lw>r.sw)r.winner='B';else if(r.sw>0)r.winner='draw';else r.winner=null;renderRoundRows2v2();}
 document.getElementById('2v2round-save-btn').addEventListener('click',()=>{
   if(!E.round2v2||!E.round2v2.every(r=>r.winner)){toast('⚠️ Vyber výsledek pro každý set');return;}
   const date=document.getElementById('2v2round-date-input').value;
@@ -1799,6 +1734,7 @@ function renderRoundRows(){
         <button class="round-wtn${r.winner==='solo'?' sel-solo':''}" data-ri="${i}" data-w="solo">🏆 ${pName(r.soloId)}</button>
         <button class="round-wtn${r.winner==='team'?' sel-team':''}" data-ri="${i}" data-w="team">👥 ${teamNames}</button>
       </div>
+      <div style="margin-bottom:8px"><button class="round-wtn${r.winner==='draw'?' sel-draw':''}" data-ri="${i}" data-w="draw" style="width:100%">🤝 Remíza</button></div>
       <div class="round-score-row">
         <div class="round-sc-cell">
           <button class="sc-btn" onclick="adjRound(${i},'sw',-1)">−</button>
@@ -1819,7 +1755,9 @@ function renderRoundRows(){
   el.querySelectorAll('.round-wtn').forEach(b=>{
     b.addEventListener('click',()=>{
       const i=parseInt(b.dataset.ri);
-      E.round[i].winner=b.dataset.w;
+      const r=E.round[i];
+      r.winner=b.dataset.w;
+      r.drawManual=b.dataset.w==='draw';
       renderRoundRows();
     });
   });
@@ -1827,8 +1765,11 @@ function renderRoundRows(){
 function adjRound(i,key,d){
   const r=E.round[i];
   r[key]=Math.max(0,r[key]+d);
+  if(r.winner==='draw'&&r.drawManual) return renderRoundRows();
   if(r.sw>r.lw) r.winner='solo';
   else if(r.lw>r.sw) r.winner='team';
+  else if(r.sw>0) r.winner='draw';
+  else r.winner=null;
   renderRoundRows();
 }
 document.getElementById('round-save-btn').addEventListener('click',()=>{
@@ -2101,8 +2042,8 @@ function renderMatchList(){
     if(m.mode==='1v1'){
       if(m.winner==='draw'){ph=`<span style="color:${pColor(m.player1)};font-weight:700">${pName(m.player1)}${b(m.player1)}</span> <span style="color:var(--t2)">🤝</span> <span style="color:${pColor(m.player2)};font-weight:700">${pName(m.player2)}${b(m.player2)}</span>`;}
       else{const w=m.winner==='1'?m.player1:m.player2,l=m.winner==='1'?m.player2:m.player1;ph=`<span style="color:${pColor(w)};font-weight:700">${pName(w)}${b(w)}</span> <span style="color:var(--t2)">vs</span> ${pName(l)}${b(l)}`;}}
-    else if(m.mode==='1v1round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const wId=r.winner==='1'?r.p1:r.p2;return`<div style="display:flex;align-items:center;gap:5px"><span style="color:${pColor(r.p1)};font-weight:700;font-size:.88rem">${pName(r.p1)}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="color:${pColor(r.p2)};font-weight:700;font-size:.88rem">${pName(r.p2)}</span>${r.score?`<span style="font-size:.78rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="color:${pColor(wId)};font-size:.8rem">✓</span></div>`;}).join('')+`</div>`;}
-    else if(m.mode==='2v2round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const nA=(r.teamA||[]).map(pName).join('+'),nB=(r.teamB||[]).map(pName).join('+');return`<div style="display:flex;align-items:center;gap:4px"><span style="font-weight:700;font-size:.82rem">${nA}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="font-size:.82rem">${nB}</span>${r.score?`<span style="font-size:.75rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="font-size:.8rem">${r.winner==='A'?'<span style="color:var(--a3)">✓</span>':'<span style="color:var(--a2)">✓</span>'}</span></div>`;}).join('')+`</div>`;}
+    else if(m.mode==='1v1round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const isDraw=r.winner==='draw';const wId=isDraw?null:r.winner==='1'?r.p1:r.p2;return`<div style="display:flex;align-items:center;gap:5px"><span style="color:${pColor(r.p1)};font-weight:700;font-size:.88rem">${pName(r.p1)}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="color:${pColor(r.p2)};font-weight:700;font-size:.88rem">${pName(r.p2)}</span>${r.score?`<span style="font-size:.78rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="font-size:.8rem">${isDraw?'🤝':`<span style="color:${pColor(wId)}">✓</span>`}</span></div>`;}).join('')+`</div>`;}
+    else if(m.mode==='2v2round'){ph=`<div style="white-space:normal;font-weight:400;line-height:1.6">`+(m.rounds||[]).map(r=>{const nA=(r.teamA||[]).map(pName).join('+'),nB=(r.teamB||[]).map(pName).join('+');const isDraw=r.winner==='draw';return`<div style="display:flex;align-items:center;gap:4px"><span style="font-weight:700;font-size:.82rem">${nA}</span><span style="color:var(--t3);font-size:.7rem">vs</span><span style="font-size:.82rem">${nB}</span>${r.score?`<span style="font-size:.75rem;color:var(--t2);margin-left:auto">${r.score}</span>`:''}<span style="font-size:.8rem">${isDraw?'🤝':r.winner==='A'?'<span style="color:var(--a3)">✓</span>':'<span style="color:var(--a2)">✓</span>'}</span></div>`;}).join('')+`</div>`;}
     else if(m.mode==='2v1round'){
       // normalise score to always solo:team regardless of how it was saved
       const normScore=r=>{
@@ -2121,7 +2062,7 @@ function renderMatchList(){
           <span style="color:var(--t3);font-size:.7rem">vs</span>
           <span style="color:var(--t2);font-size:.78rem;flex:1">${teamNames}</span>
           ${sc?`<span style="font-size:.78rem;font-weight:700;color:var(--t2)">${sc}</span>`:''}
-          <span style="font-size:.85rem">${won?`<span style="color:var(--a3)">✓</span>`:`<span style="color:var(--a2)">✗</span>`}</span>
+          <span style="font-size:.85rem">${r.winner==='draw'?'🤝':won?`<span style="color:var(--a3)">✓</span>`:`<span style="color:var(--a2)">✗</span>`}</span>
         </div>`;
       }).join('')+`</div>`;
     }
@@ -2135,7 +2076,7 @@ function renderMatchList(){
       if(m.winner==='draw'){ph=`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">🤝</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
       else{const sw=m.winner==='solo';ph=sw?`<span style="color:${pColor(m.solo)};font-weight:700">${pName(m.solo)}${b(m.solo)}</span> <span style="color:var(--t2)">vs</span> ${pName(m.teamA)}+${pName(m.teamB)}${tb}`:`${pName(m.solo)}${b(m.solo)} <span style="color:var(--t2)">vs</span> <span style="font-weight:700">${pName(m.teamA)}+${pName(m.teamB)}${tb}</span>`;}
     }
-    const roundScore=m.mode==='2v1round'?(()=>{let s=0,t=0;(m.rounds||[]).forEach(r=>{r.winner==='solo'?s++:t++;});return`${s}:${t}`;})():'';
+    const roundScore=m.mode==='2v1round'?(()=>{let s=0,t=0;(m.rounds||[]).forEach(r=>{if(r.winner==='solo')s++;else if(r.winner==='team')t++;});return`${s}:${t}`;})():'';
     return `<div class="match-card" style="--sport-color:${s.color}">
       <div class="si">${s.icon}</div>
       <div class="info">
@@ -2325,19 +2266,22 @@ function renderStats(){
     // 2v1 stats – každá hra = 1 pro procenta (vážení 0.5 platí jen pro ELO a trend)
     const p2v1=tvo.filter(m=>m.solo===p.id||m.teamA===p.id||m.teamB===p.id);
     const p2v1Win=p2v1.filter(m=>(m.solo===p.id&&m.winner==='solo')||((m.teamA===p.id||m.teamB===p.id)&&m.winner==='team')).length;
+    const p2v1Draw=p2v1.filter(m=>m.winner==='draw').length;
     // 2v2 stats
     const p2v2=dvo.filter(m=>(m.teamA||[]).includes(p.id)||(m.teamB||[]).includes(p.id));
     const p2v2Win=p2v2.filter(m=>((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')).length;
     // 1v1round sets
     const p1v1rSets=fm.filter(m=>m.mode==='1v1round').flatMap(m=>(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id));
     const p1v1rWin=p1v1rSets.filter(r=>(r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')).length;
+    const p1v1rDraw=p1v1rSets.filter(r=>r.winner==='draw').length;
     // 2v2round sets
     const p2v2rSets=fm.filter(m=>m.mode==='2v2round').flatMap(m=>(m.rounds||[]).filter(r=>(r.teamA||[]).includes(p.id)||(r.teamB||[]).includes(p.id)));
     const p2v2rWin=p2v2rSets.filter(r=>((r.teamA||[]).includes(p.id)&&r.winner==='A')||((r.teamB||[]).includes(p.id)&&r.winner==='B')).length;
+    const p2v2rDraw=p2v2rSets.filter(r=>r.winner==='draw').length;
     // combined
     const totAll=pOvo.length+p2v1.length+p2v2.length+p1v1rSets.length+p2v2rSets.length;
     const winAll=pWin+p2v1Win+p2v2Win+p1v1rWin+p2v2rWin;
-    const drawAll=pDraw;
+    const drawAll=pDraw+p2v1Draw+p1v1rDraw+p2v2rDraw;
     const lossAll=totAll-winAll-drawAll;
     const pWr=totAll?Math.round(winAll/totAll*100):null;
     const fmt=n=>Number.isInteger(n)?n:n.toFixed(1);
@@ -2349,8 +2293,8 @@ function renderStats(){
         if(m.winner==='draw')cls='n';
         else cls=(m.player1===p.id&&m.winner==='1')||(m.player2===p.id&&m.winner==='2')?'w':'l';
       }
-      else if(m.mode==='1v1round'){const sets=(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id);const w=sets.filter(r=>(r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')).length;cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
-      else if(m.mode==='2v2round'){const sets=(m.rounds||[]).filter(r=>(r.teamA||[]).includes(p.id)||(r.teamB||[]).includes(p.id));const w=sets.filter(r=>((r.teamA||[]).includes(p.id)&&r.winner==='A')||((r.teamB||[]).includes(p.id)&&r.winner==='B')).length;cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
+      else if(m.mode==='1v1round'){const sets=(m.rounds||[]).filter(r=>r.p1===p.id||r.p2===p.id);const w=sets.reduce((sum,r)=>sum+((r.p1===p.id&&r.winner==='1')||(r.p2===p.id&&r.winner==='2')?1:r.winner==='draw'?0.5:0),0);cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
+      else if(m.mode==='2v2round'){const sets=(m.rounds||[]).filter(r=>(r.teamA||[]).includes(p.id)||(r.teamB||[]).includes(p.id));const w=sets.reduce((sum,r)=>sum+(((r.teamA||[]).includes(p.id)&&r.winner==='A')||((r.teamB||[]).includes(p.id)&&r.winner==='B')?1:r.winner==='draw'?0.5:0),0);cls=w>sets.length/2?'w':w<sets.length/2?'l':'n';}
       else if(m.mode==='2v2'){
         if(m.winner==='draw')cls='n';
         else cls=((m.teamA||[]).includes(p.id)&&m.winner==='A')||((m.teamB||[]).includes(p.id)&&m.winner==='B')?'w':'l';
@@ -2363,7 +2307,7 @@ function renderStats(){
       else if(m.mode==='2v1round'){
         const rots=(m.rounds||[]);
         let wW=0,wTotal=0;
-        rots.forEach(r=>{const solo=r.soloId===p.id,w=(solo&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team');const weight=solo?1:0.5;wTotal+=weight;if(w)wW+=weight;});
+        rots.forEach(r=>{const solo=r.soloId===p.id,w=(solo&&r.winner==='solo')||(r.teamIds.includes(p.id)&&r.winner==='team'),isDraw=r.winner==='draw';const weight=solo?1:0.5;wTotal+=weight;wW+=w?weight:isDraw?weight/2:0;});
         cls=wW>wTotal/2?'w':wW<wTotal/2?'l':'n';
       }
       return`<div class="fd ${cls}"></div>`;
